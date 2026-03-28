@@ -19,10 +19,10 @@ class PythonAdapter implements LanguageAdapter {
     const blocks: CodeBlock[] = []
     const lines = code.split('\n')
 
-    // Паттерны для извлечения функций и классов
-    const functionPattern = /^(\s*)def\s+(\w+)\s*\([^)]*\)\s*(?:->\s*\w+)?\s*:/m
-    const classPattern = /^(\s*)class\s+(\w+)(?:\s*\([^)]*\))?\s*:/m
-    const asyncFunctionPattern = /^(\s*)async\s+def\s+(\w+)\s*\([^)]*\)\s*(?:->\s*\w+)?\s*:/m
+    // Паттерны для извлечения функций и классов (с флагом g!)
+    const functionPattern = /^(\s*)def\s+(\w+)\s*\([^)]*\)\s*(?:->\s*\w+)?\s*:/gm
+    const classPattern = /^(\s*)class\s+(\w+)(?:\s*\([^)]*\))?\s*:/gm
+    const asyncFunctionPattern = /^(\s*)async\s+def\s+(\w+)\s*\([^)]*\)\s*(?:->\s*\w+)?\s*:/gm
 
     let idCounter = 0
 
@@ -151,8 +151,8 @@ class PythonAdapter implements LanguageAdapter {
     endLine: number
   ): boolean {
     const lineCount = endLine - startLine + 1
-    // Игнорируем слишком маленькие (< 5 строк) и слишком большие (> 60 строк) блоки
-    return lineCount >= 5 && lineCount <= 60
+    // Игнорируем слишком маленькие (< 3 строк) и слишком большие (> 80 строк) блоки
+    return lineCount >= 3 && lineCount <= 80
   }
 
   extractSignature(block: CodeBlock): string {

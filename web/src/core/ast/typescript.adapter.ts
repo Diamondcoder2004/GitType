@@ -19,12 +19,10 @@ class TypeScriptAdapter implements LanguageAdapter {
     const blocks: CodeBlock[] = []
     const lines = code.split('\n')
 
-    // Паттерны для извлечения функций и классов
-    const functionPattern =
-      /^(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\([^)]*\)\s*(?::\s*\w+(?:<[^>]+>)?)?\s*\{/m
-    const classPattern = /^(?:export\s+)?(?:abstract\s+)?class\s+(\w+)/m
-    const arrowFunctionPattern =
-      /^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\([^)]*\)\s*(?::\s*\w+(?:<[^>]+>)?)?\s*=>/m
+    // Паттерны для извлечения функций и классов (с флагом g!)
+    const functionPattern = /^(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\([^)]*\)\s*(?::\s*\w+(?:<[^>]+>)?)?\s*\{/gm
+    const classPattern = /^(?:export\s+)?(?:abstract\s+)?class\s+(\w+)/gm
+    const arrowFunctionPattern = /^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\([^)]*\)\s*(?::\s*\w+(?:<[^>]+>)?)?\s*=>/gm
 
     let idCounter = 0
 
@@ -150,8 +148,8 @@ class TypeScriptAdapter implements LanguageAdapter {
     endLine: number
   ): boolean {
     const lineCount = endLine - startLine + 1
-    // Игнорируем слишком маленькие (< 5 строк) и слишком большие (> 60 строк) блоки
-    return lineCount >= 5 && lineCount <= 60
+    // Игнорируем слишком маленькие (< 3 строк) и слишком большие (> 80 строк) блоки
+    return lineCount >= 3 && lineCount <= 80
   }
 
   extractSignature(block: CodeBlock): string {

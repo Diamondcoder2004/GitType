@@ -87,10 +87,12 @@ function App() {
           selectedFile,
           token
         )
+        console.log('File content loaded:', content.substring(0, 100) + '...')
         setFileContent(content)
 
         // Извлекаем блоки кода
         const blocks = extractCodeBlocks(content, selectedFile)
+        console.log('Extracted blocks:', blocks)
         setCodeBlocks(blocks)
 
         // Выбираем случайный блок

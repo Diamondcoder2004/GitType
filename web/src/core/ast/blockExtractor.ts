@@ -15,24 +15,36 @@ export function extractCodeBlocks(
   const adapter = languageRegistry.getAdapter(extension)
 
   if (!adapter) {
+    console.log(`No adapter for extension: ${extension}`)
     return []
   }
 
   try {
     const ast = adapter.parse(code)
     const blocks = adapter.extractBlocks(ast, code)
+    
+    console.log(`Extracted ${blocks.length} blocks from ${filePath}`)
 
     // Фильтрация блоков по критериям
-    return blocks.filter((block) => {
-      // Игнорируем слишком маленькие блоки (< 5 строк)
+    const filtered = blocks.filter((block) => {
+      // Игнорируем слишком маленькие блоки (< 3 строк)
       const lineCount = block.endLine - block.startLine + 1
-      if (lineCount < 5) return false
+      if (lineCount < 3) {
+        console.log(`Skipping block ${block.name}: too small (${lineCount} lines)`)
+        return false
+      }
 
-      // Игнорируем слишком большие блоки (> 60 строк)
-      if (lineCount > 60) return false
+      // Игнорируем слишком большие блоки (> 80 строк)
+      if (lineCount > 80) {
+        console.log(`Skipping block ${block.name}: too large (${lineCount} lines)`)
+        return false
+      }
 
       return true
     })
+    
+    console.log(`Filtered to ${filtered.length} blocks`)
+    return filtered
   } catch (error) {
     console.error(`Error extracting blocks from ${filePath}:`, error)
     return []
