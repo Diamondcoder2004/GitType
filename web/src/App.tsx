@@ -36,6 +36,7 @@ function App() {
     fileContent,
     selectedBlock,
     languageFilter,
+    setToken,
     setFileTree,
     setSelectedFile,
     setFileContent,
@@ -45,12 +46,23 @@ function App() {
     resetTrainer,
   } = useAppStore()
 
+  // Инициализация токена при загрузке
+  useEffect(() => {
+    const savedToken = localStorage.getItem('github_token')
+    const envToken = import.meta.env.VITE_GITHUB_TOKEN
+    
+    if (savedToken) {
+      setToken(savedToken)
+    } else if (envToken) {
+      setToken(envToken)
+      localStorage.setItem('github_token', envToken)
+    }
+  }, [])
+
   // Инициализация GitHub клиента при загрузке токена
   useEffect(() => {
     if (token) {
       githubClient.initialize(token)
-      // Сохраняем токен в localStorage
-      localStorage.setItem('github_token', token)
     }
   }, [token])
 
