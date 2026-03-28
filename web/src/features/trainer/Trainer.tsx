@@ -5,6 +5,43 @@ import { processTyping } from '../../core/typing/typingEngine'
 import { calculateStats } from '../../core/typing/statsEngine'
 import './Trainer.css'
 
+function getMonacoLanguage(filePath: string | null): string {
+  if (!filePath) return 'typescript'
+  
+  const ext = filePath.split('.').pop()?.toLowerCase()
+  
+  if (!ext) return 'plaintext'
+  
+  const languageMap: Record<string, string> = {
+    ts: 'typescript',
+    tsx: 'typescript',
+    js: 'javascript',
+    jsx: 'javascript',
+    py: 'python',
+    java: 'java',
+    go: 'go',
+    rs: 'rust',
+    cpp: 'cpp',
+    c: 'c',
+    cs: 'csharp',
+    php: 'php',
+    rb: 'ruby',
+    swift: 'swift',
+    kt: 'kotlin',
+    html: 'html',
+    css: 'css',
+    json: 'json',
+    md: 'markdown',
+    yaml: 'yaml',
+    yml: 'yaml',
+    sql: 'sql',
+    sh: 'shell',
+    bash: 'shell',
+  }
+  
+  return languageMap[ext] || 'plaintext'
+}
+
 export function Trainer() {
   const {
     mode,
@@ -12,6 +49,7 @@ export function Trainer() {
     startTime,
     isComplete,
     stats,
+    selectedFile,
     setUserInput,
     setStartTime,
     setEndTime,
@@ -63,8 +101,17 @@ export function Trainer() {
     setIsComplete(false)
   }
 
+  const getPlaceholderComment = () => {
+    const ext = selectedFile?.split('.').pop()?.toLowerCase()
+    const pythonExts = ['py', 'pyw', 'pyi']
+    if (ext && pythonExts.includes(ext)) {
+      return '# TODO: Implement this function'
+    }
+    return '// TODO: Implement this function'
+  }
+
   const displayContent = mode === 'implement' && selectedBlock
-    ? `${selectedBlock.signature}\n  // TODO: Implement this function\n}`
+    ? `${selectedBlock.signature}\n  ${getPlaceholderComment()}\n}`
     : selectedBlock?.code || ''
 
   return (
@@ -113,7 +160,7 @@ export function Trainer() {
       <div className="editor-container">
         <Editor
           height="400px"
-          language="typescript"
+          language={getMonacoLanguage(selectedFile)}
           value={displayContent}
           onChange={(value) => {
             if (!startTime && value && value.length > 0) {

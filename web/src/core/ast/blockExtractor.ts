@@ -1,5 +1,7 @@
 import { CodeBlock, LanguageAdapter } from './languageAdapter'
 import { languageRegistry } from './languageAdapter'
+import './typescript.adapter'
+import './python.adapter'
 
 /**
  * Извлекает семантические блоки кода из файла
