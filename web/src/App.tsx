@@ -107,10 +107,11 @@ function App() {
         console.log('Extracted blocks:', blocks)
         setCodeBlocks(blocks)
 
-        // Выбираем случайный блок
+        // Выбираем случайный блок для режима code-block
         const randomBlock = getRandomBlock(blocks)
         setSelectedBlock(randomBlock || null)
 
+        // Сбрасываем тренер и устанавливаем режим full-file по умолчанию
         resetTrainer()
       } catch (error) {
         console.error('Error loading file content:', error)

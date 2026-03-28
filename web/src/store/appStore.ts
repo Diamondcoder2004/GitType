@@ -3,7 +3,7 @@ import { TreeNode } from '../core/repository/treeBuilder'
 import { CodeBlock } from '../core/ast/languageAdapter'
 import { TypingStats } from '..//core/typing/statsEngine'
 
-export type TrainerMode = 'full-block' | 'implement'
+export type TrainerMode = 'full-file' | 'code-block'
 export type AppView = 'repo-select' | 'trainer'
 
 interface RepoState {
@@ -61,7 +61,7 @@ const initialRepoState: RepoState = {
 }
 
 const initialTrainerState: TrainerState = {
-  mode: 'full-block',
+  mode: 'full-file',
   userInput: '',
   startTime: null,
   endTime: null,

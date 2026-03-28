@@ -46,10 +46,11 @@ export function Trainer() {
   const {
     mode,
     selectedBlock,
+    fileContent,
+    selectedFile,
     startTime,
     isComplete,
     stats,
-    selectedFile,
     setUserInput,
     setStartTime,
     setEndTime,
@@ -65,11 +66,11 @@ export function Trainer() {
 
     editor.onDidChangeModelContent(() => {
       const value = editor.getValue()
-      const target = mode === 'implement' 
-        ? selectedBlock?.body || '' 
+      const target = mode === 'full-file' 
+        ? fileContent || ''
         : selectedBlock?.code || ''
 
-      if (!startTime) {
+      if (!startTime && value.length > 0) {
         setStartTime(Date.now())
       }
 
@@ -93,7 +94,7 @@ export function Trainer() {
   }
 
   const handleModeToggle = () => {
-    setMode(mode === 'full-block' ? 'implement' : 'full-block')
+    setMode(mode === 'full-file' ? 'code-block' : 'full-file')
     setUserInput('')
     setStartTime(null)
     setEndTime(null)
@@ -101,24 +102,18 @@ export function Trainer() {
     setIsComplete(false)
   }
 
-  const getPlaceholderComment = () => {
-    const ext = selectedFile?.split('.').pop()?.toLowerCase()
-    const pythonExts = ['py', 'pyw', 'pyi']
-    if (ext && pythonExts.includes(ext)) {
-      return '# TODO: Implement this function'
-    }
-    return '// TODO: Implement this function'
-  }
-
-  const displayContent = mode === 'implement' && selectedBlock
-    ? `${selectedBlock.signature}\n  ${getPlaceholderComment()}\n}`
+  // В режиме full-file показываем весь файл, в режиме code-block - выбранный блок
+  const displayContent = mode === 'full-file'
+    ? fileContent || ''
     : selectedBlock?.code || ''
+
+  const targetContent = displayContent
 
   return (
     <div className="trainer">
       <div className="trainer-header">
         <div className="block-info">
-          {selectedBlock && (
+          {mode === 'code-block' && selectedBlock ? (
             <>
               <span className="block-type">{selectedBlock.type}</span>
               <span className="block-name">{selectedBlock.name}</span>
@@ -126,13 +121,20 @@ export function Trainer() {
                 Сложность: {selectedBlock.complexity}
               </span>
             </>
+          ) : (
+            <span className="block-type">Весь файл</span>
           )}
         </div>
 
         <div className="trainer-controls">
           <button onClick={handleModeToggle} className="mode-btn">
-            {mode === 'full-block' ? 'Full Block' : 'Implement'}
+            {mode === 'full-file' ? '📄 Весь файл' : '🔹 Блок кода'}
           </button>
+          {mode === 'code-block' && (
+            <button onClick={handleModeToggle} className="mode-btn">
+              🎲 Случайный блок
+            </button>
+          )}
         </div>
       </div>
 
@@ -159,7 +161,7 @@ export function Trainer() {
 
       <div className="editor-container">
         <Editor
-          height="400px"
+          height="500px"
           language={getMonacoLanguage(selectedFile)}
           value={displayContent}
           onChange={(value) => {
@@ -173,8 +175,8 @@ export function Trainer() {
             readOnly: false,
             minimap: { enabled: false },
             fontSize: 14,
-            lineNumbers: 'off',
-            folding: false,
+            lineNumbers: 'on',
+            folding: true,
             scrollBeyondLastLine: false,
             wordWrap: 'on',
             automaticLayout: true,
@@ -186,6 +188,12 @@ export function Trainer() {
       {isComplete && (
         <div className="complete-message">
           🎉 Тренировка завершена!
+        </div>
+      )}
+
+      {!displayContent && (
+        <div className="no-block">
+          Выберите файл для начала тренировки
         </div>
       )}
     </div>
