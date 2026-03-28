@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   padding: 1rem;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .trainer-header {
@@ -103,13 +103,13 @@
 
 .typing-area {
   flex: 1;
-  background: #282a2e;
+  background: #1e1e1e;
   border-radius: 8px;
-  padding: 2rem;
+  padding: 1.5rem;
   position: relative;
   outline: none;
   cursor: text;
-  min-height: 300px;
+  overflow: auto;
   border: 2px solid var(--sub-color);
 }
 
@@ -121,30 +121,29 @@
 .code-display {
   font-family: var(--font-mono);
   font-size: 1.1rem;
-  line-height: 1.8;
-  white-space: pre-wrap;
-  word-break: break-word;
+  line-height: 1.6;
+  white-space: pre;
+  word-break: normal;
   position: relative;
   color: #b5b5b5;
+  min-height: 100%;
 }
 
 .char {
-  transition: color 0.1s;
+  transition: color 0.05s;
   position: relative;
 }
 
 /* Правильно напечатанные символы */
 .char.correct {
   color: #ffffff;
-  text-shadow: 0 0 2px rgba(255, 255, 255, 0.3);
 }
 
 /* Ошибки */
 .char.incorrect {
   color: #ff6b6b;
-  background: rgba(255, 107, 107, 0.2);
+  background: rgba(255, 107, 107, 0.25);
   border-radius: 2px;
-  text-decoration: underline;
 }
 
 /* Текущий символ (курсор) */
@@ -158,8 +157,24 @@
 
 /* Ещё не напечатанные символы (полупрозрачные) */
 .char.pending {
-  color: #5c5f62;
-  opacity: 0.4;
+  color: #6b6b6b;
+  opacity: 0.5;
+}
+
+/* Специальные символы */
+.special-char {
+  color: var(--sub-color);
+  opacity: 0.6;
+  font-size: 0.9em;
+}
+
+.newline {
+  display: inline-block;
+}
+
+.space-char {
+  color: #4a4a4a;
+  opacity: 0.3;
 }
 
 @keyframes blink {
@@ -190,7 +205,7 @@
   text-align: center;
   color: var(--sub-color);
   margin-top: 1rem;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .loading {
@@ -210,17 +225,17 @@
 
 /* Scrollbar styles */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-color);
+  background: #1a1a1a;
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--sub-color);
-  border-radius: 4px;
+  border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {

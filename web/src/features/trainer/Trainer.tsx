@@ -61,6 +61,7 @@ export function Trainer() {
 
   const inputRef = useRef<HTMLInputElement>(null)
   const codeDisplayRef = useRef<HTMLDivElement>(null)
+  const currentCharRef = useRef<HTMLSpanElement>(null)
 
   // Целевой текст для печати
   const targetText = mode === 'full-file'
@@ -69,6 +70,24 @@ export function Trainer() {
 
   // Получаем статусы символов
   const charStatuses = getCharStatuses(targetText, userInput)
+
+  // Авто-скролл к текущему символу
+  useEffect(() => {
+    if (currentCharRef.current && codeDisplayRef.current) {
+      const currentChar = currentCharRef.current
+      const container = codeDisplayRef.current
+      
+      // Центрируем текущий символ по вертикали
+      const charRect = currentChar.getBoundingClientRect()
+      const containerRect = container.getBoundingClientRect()
+      const relativeTop = charRect.top - containerRect.top
+      
+      // Если символ выходит за пределы, скроллим
+      if (relativeTop < 50 || relativeTop > containerRect.height - 50) {
+        currentChar.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }
+  }, [userInput])
 
   // Фокус на input при клике
   const handleContainerClick = () => {
@@ -83,29 +102,32 @@ export function Trainer() {
       setStartTime(Date.now())
     }
 
-    setUserInput(value.slice(0, targetText.length))
+    // Ограничиваем длину ввода длиной целевого текста
+    if (value.length <= targetText.length) {
+      setUserInput(value)
 
-    // Проверка завершения - когда дошли до конца текста
-    if (value.length >= targetText.length && !isComplete) {
-      setEndTime(Date.now())
-      setIsComplete(true)
+      // Проверка завершения - когда дошли до конца текста
+      if (value.length === targetText.length && !isComplete) {
+        setEndTime(Date.now())
+        setIsComplete(true)
 
-      const result = processTyping(targetText, value)
-      const finalStats = calculateStats(
-        startTime || Date.now(),
-        Date.now(),
-        value.length,
-        result.correctChars,
-        result.errors
-      )
-      setStats(finalStats)
+        const result = processTyping(targetText, value)
+        const finalStats = calculateStats(
+          startTime || Date.now(),
+          Date.now(),
+          value.length,
+          result.correctChars,
+          result.errors
+        )
+        setStats(finalStats)
+      }
     }
   }
 
   // Обработка клавиш
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Tab для перезапуска
-    if (e.key === 'Tab') {
+    // Escape для перезапуска
+    if (e.key === 'Escape') {
       e.preventDefault()
       setUserInput('')
       setStartTime(null)
@@ -113,10 +135,32 @@ export function Trainer() {
       setStats(null)
       setIsComplete(false)
       setTimeout(() => inputRef.current?.focus(), 50)
+      return
     }
-    
-    // Enter для завершения (если напечатали весь текст)
+
+    // Tab для вставки отступа (4 пробела)
+    if (e.key === 'Tab') {
+      e.preventDefault()
+      const newValue = userInput + '    '
+      if (newValue.length <= targetText.length) {
+        setUserInput(newValue)
+      }
+      setTimeout(() => inputRef.current?.focus(), 10)
+      return
+    }
+
+    // Обработка Enter - разрешаем обычный перенос строки
     if (e.key === 'Enter') {
+      // Если ещё не дошли до конца, разрешаем Enter
+      if (userInput.length < targetText.length) {
+        // Проверяем, что следующий символ - это перенос строки
+        const nextChar = targetText[userInput.length]
+        if (nextChar === '\n') {
+          // Разрешаем Enter пройти через input
+          return
+        }
+      }
+      // Если Enter в конце - завершаем
       if (userInput.length >= targetText.length && !isComplete) {
         e.preventDefault()
         setEndTime(Date.now())
@@ -145,29 +189,51 @@ export function Trainer() {
     setTimeout(() => inputRef.current?.focus(), 50)
   }
 
-  // Рендеринг текста с подсветкой
+  // Рендеринг текста с подсветкой и сохранением форматирования
   const renderCodeDisplay = () => {
     if (!targetText) return null
 
     return targetText.split('').map((char, index) => {
       const status = charStatuses[index]
+      const isCurrent = index === userInput.length
+      
       let className = 'char '
 
       if (status === 'correct') {
         className += 'correct'
       } else if (status === 'incorrect') {
         className += 'incorrect'
-      } else if (status === 'current') {
+      } else if (isCurrent) {
         className += 'current'
       } else {
         className += 'pending'
       }
 
-      // Отображение специальных символов
-      const displayChar = char === '\n' ? '↵' : char === ' ' ? '·' : char === '\t' ? '→   ' : char
+      // Отображение специальных символов с сохранением форматирования
+      let displayChar: React.ReactNode = char
+      let charClass = ''
+
+      if (char === '\n') {
+        displayChar = (
+          <>
+            <span className="special-char">↵</span>
+            <br />
+          </>
+        )
+        charClass = 'newline'
+      } else if (char === '\t') {
+        displayChar = <span className="special-char">→···</span>
+        charClass = 'tab'
+      } else if (char === ' ') {
+        displayChar = <span className="space-char">·</span>
+      }
 
       return (
-        <span key={index} className={className}>
+        <span
+          key={index}
+          ref={isCurrent ? currentCharRef : null}
+          className={`${className} ${charClass}`}
+        >
           {displayChar}
         </span>
       )
@@ -259,13 +325,15 @@ export function Trainer() {
 
       {isComplete && (
         <div className="complete-message">
-          🎉 Тренировка завершена! Нажми Tab для перезапуска
+          🎉 Тренировка завершена! Нажми <strong>Escape</strong> для перезапуска
         </div>
       )}
 
       {!isComplete && targetText && (
         <div className="hint-message">
-          Начни печатать код. Нажми <strong>Tab</strong> для перезапуска.
+          <strong>Tab</strong> — отступ &nbsp;|&nbsp; 
+          <strong>Enter</strong> — перенос строки &nbsp;|&nbsp; 
+          <strong>Escape</strong> — перезапуск
         </div>
       )}
     </div>
