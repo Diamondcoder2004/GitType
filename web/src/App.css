@@ -106,7 +106,9 @@ body {
   flex: 1;
   background: var(--sub-color);
   border-radius: 8px;
-  overflow: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .no-block {

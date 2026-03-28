@@ -71,20 +71,19 @@ export function Trainer() {
   // Получаем статусы символов
   const charStatuses = getCharStatuses(targetText, userInput)
 
-  // Авто-скролл к текущему символу
+  // Авто-скролл к текущему символу (только внутри typing-area)
   useEffect(() => {
     if (currentCharRef.current && codeDisplayRef.current) {
       const currentChar = currentCharRef.current
       const container = codeDisplayRef.current
       
-      // Центрируем текущий символ по вертикали
       const charRect = currentChar.getBoundingClientRect()
       const containerRect = container.getBoundingClientRect()
       const relativeTop = charRect.top - containerRect.top
       
-      // Если символ выходит за пределы, скроллим
-      if (relativeTop < 50 || relativeTop > containerRect.height - 50) {
-        currentChar.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      // Скроллим только если символ выходит за пределы видимой области
+      if (relativeTop < 20 || relativeTop > containerRect.height - 20) {
+        currentChar.scrollIntoView({ behavior: 'auto', block: 'nearest' })
       }
     }
   }, [userInput])
@@ -94,38 +93,8 @@ export function Trainer() {
     inputRef.current?.focus()
   }
 
-  // Обработка ввода
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-
-    if (!startTime && value.length > 0) {
-      setStartTime(Date.now())
-    }
-
-    // Ограничиваем длину ввода длиной целевого текста
-    if (value.length <= targetText.length) {
-      setUserInput(value)
-
-      // Проверка завершения - когда дошли до конца текста
-      if (value.length === targetText.length && !isComplete) {
-        setEndTime(Date.now())
-        setIsComplete(true)
-
-        const result = processTyping(targetText, value)
-        const finalStats = calculateStats(
-          startTime || Date.now(),
-          Date.now(),
-          value.length,
-          result.correctChars,
-          result.errors
-        )
-        setStats(finalStats)
-      }
-    }
-  }
-
-  // Обработка клавиш
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  // Обработка ввода - используем onKeyDown для перехвата всех клавиш
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // Escape для перезапуска
     if (e.key === 'Escape') {
       e.preventDefault()
@@ -145,36 +114,43 @@ export function Trainer() {
       if (newValue.length <= targetText.length) {
         setUserInput(newValue)
       }
-      setTimeout(() => inputRef.current?.focus(), 10)
       return
     }
 
-    // Обработка Enter - разрешаем обычный перенос строки
-    if (e.key === 'Enter') {
-      // Если ещё не дошли до конца, разрешаем Enter
-      if (userInput.length < targetText.length) {
-        // Проверяем, что следующий символ - это перенос строки
-        const nextChar = targetText[userInput.length]
-        if (nextChar === '\n') {
-          // Разрешаем Enter пройти через input
-          return
+    // Обработка специальных клавиш
+    if (e.key === 'Backspace') {
+      // Разрешаем Backspace
+      return
+    }
+
+    // Все остальные клавиши обрабатываем вручную
+    if (e.key.length === 1 || e.key === 'Enter') {
+      e.preventDefault()
+      
+      const newValue = userInput + (e.key === 'Enter' ? '\n' : e.key)
+      
+      if (newValue.length <= targetText.length) {
+        setUserInput(newValue)
+
+        if (!startTime) {
+          setStartTime(Date.now())
         }
-      }
-      // Если Enter в конце - завершаем
-      if (userInput.length >= targetText.length && !isComplete) {
-        e.preventDefault()
-        setEndTime(Date.now())
-        setIsComplete(true)
-        
-        const result = processTyping(targetText, userInput)
-        const finalStats = calculateStats(
-          startTime || Date.now(),
-          Date.now(),
-          userInput.length,
-          result.correctChars,
-          result.errors
-        )
-        setStats(finalStats)
+
+        // Проверка завершения
+        if (newValue.length === targetText.length && !isComplete) {
+          setEndTime(Date.now())
+          setIsComplete(true)
+
+          const result = processTyping(targetText, newValue)
+          const finalStats = calculateStats(
+            startTime || Date.now(),
+            Date.now(),
+            newValue.length,
+            result.correctChars,
+            result.errors
+          )
+          setStats(finalStats)
+        }
       }
     }
   }
@@ -189,7 +165,7 @@ export function Trainer() {
     setTimeout(() => inputRef.current?.focus(), 50)
   }
 
-  // Рендеринг текста с подсветкой и сохранением форматирования
+  // Рендеринг текста с подсветкой
   const renderCodeDisplay = () => {
     if (!targetText) return null
 
@@ -209,32 +185,13 @@ export function Trainer() {
         className += 'pending'
       }
 
-      // Отображение специальных символов с сохранением форматирования
-      let displayChar: React.ReactNode = char
-      let charClass = ''
-
-      if (char === '\n') {
-        displayChar = (
-          <>
-            <span className="special-char">↵</span>
-            <br />
-          </>
-        )
-        charClass = 'newline'
-      } else if (char === '\t') {
-        displayChar = <span className="special-char">→···</span>
-        charClass = 'tab'
-      } else if (char === ' ') {
-        displayChar = <span className="space-char">·</span>
-      }
-
       return (
         <span
           key={index}
           ref={isCurrent ? currentCharRef : null}
-          className={`${className} ${charClass}`}
+          className={className}
         >
-          {displayChar}
+          {char}
         </span>
       )
     })
@@ -312,10 +269,9 @@ export function Trainer() {
           ref={inputRef}
           type="text"
           className="hidden-input"
-          value={userInput}
-          onChange={handleInputChange}
+          value=""
           onKeyDown={handleKeyDown}
-          disabled={!targetText}
+          disabled={!targetText || isComplete}
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"
