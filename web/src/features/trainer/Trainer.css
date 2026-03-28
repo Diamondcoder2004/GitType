@@ -103,17 +103,19 @@
 
 .typing-area {
   flex: 1;
-  background: var(--sub-color);
+  background: #282a2e;
   border-radius: 8px;
   padding: 2rem;
   position: relative;
   outline: none;
   cursor: text;
   min-height: 300px;
+  border: 2px solid var(--sub-color);
 }
 
 .typing-area:focus {
-  box-shadow: 0 0 0 2px var(--main-color);
+  border-color: var(--main-color);
+  box-shadow: 0 0 0 2px rgba(226, 183, 20, 0.2);
 }
 
 .code-display {
@@ -123,6 +125,7 @@
   white-space: pre-wrap;
   word-break: break-word;
   position: relative;
+  color: #b5b5b5;
 }
 
 .char {
@@ -132,28 +135,31 @@
 
 /* Правильно напечатанные символы */
 .char.correct {
-  color: var(--text-color);
+  color: #ffffff;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.3);
 }
 
 /* Ошибки */
 .char.incorrect {
-  color: var(--error-color);
-  background: rgba(202, 71, 84, 0.3);
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.2);
   border-radius: 2px;
+  text-decoration: underline;
 }
 
 /* Текущий символ (курсор) */
 .char.current {
-  background-color: var(--caret-color);
-  color: var(--bg-color);
+  background-color: var(--main-color);
+  color: #1e1e1e;
   animation: blink 1s infinite;
   border-radius: 2px;
+  font-weight: bold;
 }
 
 /* Ещё не напечатанные символы (полупрозрачные) */
 .char.pending {
   color: #5c5f62;
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 @keyframes blink {

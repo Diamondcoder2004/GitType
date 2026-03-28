@@ -85,7 +85,7 @@ export function Trainer() {
 
     setUserInput(value.slice(0, targetText.length))
 
-    // Проверка завершения
+    // Проверка завершения - когда дошли до конца текста
     if (value.length >= targetText.length && !isComplete) {
       setEndTime(Date.now())
       setIsComplete(true)
@@ -113,6 +113,25 @@ export function Trainer() {
       setStats(null)
       setIsComplete(false)
       setTimeout(() => inputRef.current?.focus(), 50)
+    }
+    
+    // Enter для завершения (если напечатали весь текст)
+    if (e.key === 'Enter') {
+      if (userInput.length >= targetText.length && !isComplete) {
+        e.preventDefault()
+        setEndTime(Date.now())
+        setIsComplete(true)
+        
+        const result = processTyping(targetText, userInput)
+        const finalStats = calculateStats(
+          startTime || Date.now(),
+          Date.now(),
+          userInput.length,
+          result.correctChars,
+          result.errors
+        )
+        setStats(finalStats)
+      }
     }
   }
 
