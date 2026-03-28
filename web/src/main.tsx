@@ -3,8 +3,17 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 
 // Polyfill для Buffer (нужен для @octokit/rest в браузере)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+declare global {
+  interface Window {
+    global?: typeof globalThis
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Buffer?: any
+  }
+}
+
 window.global = window
-if (typeof window.Buffer === 'undefined') {
+if (!window.Buffer) {
   window.Buffer = {
     from: (data: string | number[], encoding?: string) => {
       if (typeof data === 'string') {
@@ -18,7 +27,6 @@ if (typeof window.Buffer === 'undefined') {
             toString: () => new TextDecoder().decode(bytes)
           }
         } else {
-          const bytes = new TextEncoder().encode(data)
           return {
             toString: () => data
           }
@@ -28,7 +36,7 @@ if (typeof window.Buffer === 'undefined') {
         toString: () => String.fromCharCode(...data)
       }
     }
-  } as any
+  }
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
