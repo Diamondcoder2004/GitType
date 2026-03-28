@@ -1,7 +1,6 @@
-import { useRef } from 'react'
-import Editor, { OnMount } from '@monaco-editor/react'
+import { useRef, useEffect } from 'react'
 import { useAppStore } from '../../store/appStore'
-import { processTyping } from '../../core/typing/typingEngine'
+import { processTyping, getCharStatuses } from '../../core/typing/typingEngine'
 import { calculateStats } from '../../core/typing/statsEngine'
 import './Trainer.css'
 
@@ -48,6 +47,7 @@ export function Trainer() {
     selectedBlock,
     fileContent,
     selectedFile,
+    userInput,
     startTime,
     isComplete,
     stats,
@@ -59,38 +59,61 @@ export function Trainer() {
     setMode,
   } = useAppStore()
 
-  const editorRef = useRef<any>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const codeDisplayRef = useRef<HTMLDivElement>(null)
 
-  const handleEditorMount: OnMount = (editor) => {
-    editorRef.current = editor
+  // Целевой текст для печати
+  const targetText = mode === 'full-file'
+    ? fileContent || ''
+    : selectedBlock?.code || ''
 
-    editor.onDidChangeModelContent(() => {
-      const value = editor.getValue()
-      const target = mode === 'full-file' 
-        ? fileContent || ''
-        : selectedBlock?.code || ''
+  // Получаем статусы символов
+  const charStatuses = getCharStatuses(targetText, userInput)
 
-      if (!startTime && value.length > 0) {
-        setStartTime(Date.now())
-      }
+  // Фокус на input при клике
+  const handleContainerClick = () => {
+    inputRef.current?.focus()
+  }
 
-      const result = processTyping(target, value)
-      setUserInput(value)
+  // Обработка ввода
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
 
-      if (result.completed && !isComplete) {
-        setEndTime(Date.now())
-        setIsComplete(true)
+    if (!startTime && value.length > 0) {
+      setStartTime(Date.now())
+    }
 
-        const finalStats = calculateStats(
-          startTime || Date.now(),
-          Date.now(),
-          value.length,
-          result.correctChars,
-          result.errors
-        )
-        setStats(finalStats)
-      }
-    })
+    setUserInput(value.slice(0, targetText.length))
+
+    // Проверка завершения
+    if (value.length >= targetText.length && !isComplete) {
+      setEndTime(Date.now())
+      setIsComplete(true)
+
+      const result = processTyping(targetText, value)
+      const finalStats = calculateStats(
+        startTime || Date.now(),
+        Date.now(),
+        value.length,
+        result.correctChars,
+        result.errors
+      )
+      setStats(finalStats)
+    }
+  }
+
+  // Обработка клавиш
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Tab для перезапуска
+    if (e.key === 'Tab') {
+      e.preventDefault()
+      setUserInput('')
+      setStartTime(null)
+      setEndTime(null)
+      setStats(null)
+      setIsComplete(false)
+      setTimeout(() => inputRef.current?.focus(), 50)
+    }
   }
 
   const handleModeToggle = () => {
@@ -100,14 +123,39 @@ export function Trainer() {
     setEndTime(null)
     setStats(null)
     setIsComplete(false)
+    setTimeout(() => inputRef.current?.focus(), 50)
   }
 
-  // В режиме full-file показываем весь файл, в режиме code-block - выбранный блок
-  const displayContent = mode === 'full-file'
-    ? fileContent || ''
-    : selectedBlock?.code || ''
+  // Рендеринг текста с подсветкой
+  const renderCodeDisplay = () => {
+    if (!targetText) return null
 
-  const targetContent = displayContent
+    return targetText.split('').map((char, index) => {
+      const status = charStatuses[index]
+      let className = 'char '
+
+      if (status === 'correct') {
+        className += 'correct'
+      } else if (status === 'incorrect') {
+        className += 'incorrect'
+      } else if (status === 'current') {
+        className += 'current'
+      } else {
+        className += 'pending'
+      }
+
+      // Отображение специальных символов
+      const displayChar = char === '\n' ? '↵' : char === ' ' ? '·' : char === '\t' ? '→   ' : char
+
+      return (
+        <span key={index} className={className}>
+          {displayChar}
+        </span>
+      )
+    })
+  }
+
+  const progress = targetText ? (userInput.length / targetText.length) * 100 : 0
 
   return (
     <div className="trainer">
@@ -130,11 +178,6 @@ export function Trainer() {
           <button onClick={handleModeToggle} className="mode-btn">
             {mode === 'full-file' ? '📄 Весь файл' : '🔹 Блок кода'}
           </button>
-          {mode === 'code-block' && (
-            <button onClick={handleModeToggle} className="mode-btn">
-              🎲 Случайный блок
-            </button>
-          )}
         </div>
       </div>
 
@@ -159,41 +202,51 @@ export function Trainer() {
         </div>
       )}
 
-      <div className="editor-container">
-        <Editor
-          height="500px"
-          language={getMonacoLanguage(selectedFile)}
-          value={displayContent}
-          onChange={(value) => {
-            if (!startTime && value && value.length > 0) {
-              setStartTime(Date.now())
-            }
-            setUserInput(value || '')
-          }}
-          onMount={handleEditorMount}
-          options={{
-            readOnly: false,
-            minimap: { enabled: false },
-            fontSize: 14,
-            lineNumbers: 'on',
-            folding: true,
-            scrollBeyondLastLine: false,
-            wordWrap: 'on',
-            automaticLayout: true,
-            theme: 'vs-dark',
-          }}
+      <div className="progress-bar">
+        <div className="progress-fill" style={{ width: `${progress}%` }} />
+      </div>
+
+      <div
+        className="typing-area"
+        onClick={handleContainerClick}
+        ref={codeDisplayRef}
+        tabIndex={0}
+      >
+        {targetText ? (
+          <div className="code-display">
+            {renderCodeDisplay()}
+          </div>
+        ) : (
+          <div className="loading">
+            Выберите файл для начала тренировки
+          </div>
+        )}
+
+        {/* Скрытый input для перехвата ввода */}
+        <input
+          ref={inputRef}
+          type="text"
+          className="hidden-input"
+          value={userInput}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          disabled={!targetText}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
         />
       </div>
 
       {isComplete && (
         <div className="complete-message">
-          🎉 Тренировка завершена!
+          🎉 Тренировка завершена! Нажми Tab для перезапуска
         </div>
       )}
 
-      {!displayContent && (
-        <div className="no-block">
-          Выберите файл для начала тренировки
+      {!isComplete && targetText && (
+        <div className="hint-message">
+          Начни печатать код. Нажми <strong>Tab</strong> для перезапуска.
         </div>
       )}
     </div>

@@ -60,13 +60,6 @@
   color: var(--bg-color);
 }
 
-.editor-container {
-  flex: 1;
-  border-radius: 8px;
-  overflow: hidden;
-  background: var(--sub-color);
-}
-
 .stats-bar {
   display: flex;
   justify-content: center;
@@ -94,10 +87,136 @@
   margin-top: 0.25rem;
 }
 
+.progress-bar {
+  height: 4px;
+  background: var(--sub-color);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--main-color);
+  transition: width 0.3s;
+}
+
+.typing-area {
+  flex: 1;
+  background: var(--sub-color);
+  border-radius: 8px;
+  padding: 2rem;
+  position: relative;
+  outline: none;
+  cursor: text;
+  min-height: 300px;
+}
+
+.typing-area:focus {
+  box-shadow: 0 0 0 2px var(--main-color);
+}
+
+.code-display {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-word;
+  position: relative;
+}
+
+.char {
+  transition: color 0.1s;
+  position: relative;
+}
+
+/* Правильно напечатанные символы */
+.char.correct {
+  color: var(--text-color);
+}
+
+/* Ошибки */
+.char.incorrect {
+  color: var(--error-color);
+  background: rgba(202, 71, 84, 0.3);
+  border-radius: 2px;
+}
+
+/* Текущий символ (курсор) */
+.char.current {
+  background-color: var(--caret-color);
+  color: var(--bg-color);
+  animation: blink 1s infinite;
+  border-radius: 2px;
+}
+
+/* Ещё не напечатанные символы (полупрозрачные) */
+.char.pending {
+  color: #5c5f62;
+  opacity: 0.5;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.7; }
+}
+
+.hidden-input {
+  position: absolute;
+  opacity: 0;
+  top: 50%;
+  left: 50%;
+  width: 1px;
+  height: 1px;
+  cursor: text;
+}
+
 .complete-message {
   text-align: center;
   padding: 1rem;
   font-size: 1.25rem;
   color: var(--main-color);
   font-weight: bold;
+  margin-top: 1rem;
+}
+
+.hint-message {
+  text-align: center;
+  color: var(--sub-color);
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--sub-color);
+}
+
+.no-block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-color);
+  font-size: 1.1rem;
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-color);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--sub-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--main-color);
 }
