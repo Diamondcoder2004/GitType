@@ -1,9 +1,18 @@
 import { useState } from 'react'
+import { shallow } from 'zustand/shallow'
 import { useAppStore } from '../../store/appStore'
 import './RepoSelector.css'
 
 export function RepoSelector() {
-  const { token, setToken, selectedRepo, setSelectedRepo } = useAppStore()
+  const { token, setToken, selectedRepo, setSelectedRepo } = useAppStore(
+    (state) => ({
+      token: state.token,
+      setToken: state.setToken,
+      selectedRepo: state.selectedRepo,
+      setSelectedRepo: state.setSelectedRepo,
+    }),
+    shallow
+  )
   const [repoInput, setRepoInput] = useState('')
 
   const handleSubmit = (e: React.FormEvent) => {

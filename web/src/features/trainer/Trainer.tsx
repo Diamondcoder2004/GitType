@@ -1,52 +1,15 @@
-import { useRef, useEffect } from 'react'
+import { useEffect, useMemo, useRef, useCallback } from 'react'
+import { shallow } from 'zustand/shallow'
 import { useAppStore } from '../../store/appStore'
 import { processTyping, getCharStatuses } from '../../core/typing/typingEngine'
 import { calculateStats } from '../../core/typing/statsEngine'
 import './Trainer.css'
-
-function getMonacoLanguage(filePath: string | null): string {
-  if (!filePath) return 'typescript'
-  
-  const ext = filePath.split('.').pop()?.toLowerCase()
-  
-  if (!ext) return 'plaintext'
-  
-  const languageMap: Record<string, string> = {
-    ts: 'typescript',
-    tsx: 'typescript',
-    js: 'javascript',
-    jsx: 'javascript',
-    py: 'python',
-    java: 'java',
-    go: 'go',
-    rs: 'rust',
-    cpp: 'cpp',
-    c: 'c',
-    cs: 'csharp',
-    php: 'php',
-    rb: 'ruby',
-    swift: 'swift',
-    kt: 'kotlin',
-    html: 'html',
-    css: 'css',
-    json: 'json',
-    md: 'markdown',
-    yaml: 'yaml',
-    yml: 'yaml',
-    sql: 'sql',
-    sh: 'shell',
-    bash: 'shell',
-  }
-  
-  return languageMap[ext] || 'plaintext'
-}
 
 export function Trainer() {
   const {
     mode,
     selectedBlock,
     fileContent,
-    selectedFile,
     userInput,
     startTime,
     isComplete,
@@ -57,122 +20,146 @@ export function Trainer() {
     setStats,
     setIsComplete,
     setMode,
-  } = useAppStore()
+  } = useAppStore(
+    (state) => ({
+      mode: state.mode,
+      selectedBlock: state.selectedBlock,
+      fileContent: state.fileContent,
+      userInput: state.userInput,
+      startTime: state.startTime,
+      isComplete: state.isComplete,
+      stats: state.stats,
+      setUserInput: state.setUserInput,
+      setStartTime: state.setStartTime,
+      setEndTime: state.setEndTime,
+      setStats: state.setStats,
+      setIsComplete: state.setIsComplete,
+      setMode: state.setMode,
+    }),
+    shallow
+  )
 
-  const inputRef = useRef<HTMLInputElement>(null)
-  const codeDisplayRef = useRef<HTMLDivElement>(null)
+  const typingAreaRef = useRef<HTMLDivElement>(null)
   const currentCharRef = useRef<HTMLSpanElement>(null)
 
-  // Целевой текст для печати
-  const targetText = mode === 'full-file'
-    ? fileContent || ''
-    : selectedBlock?.code || ''
+  const targetText = useMemo(
+    () => (mode === 'full-file' ? fileContent || '' : selectedBlock?.code || ''),
+    [mode, fileContent, selectedBlock]
+  )
 
-  // Получаем статусы символов
-  const charStatuses = getCharStatuses(targetText, userInput)
+  const charStatuses = useMemo(
+    () => getCharStatuses(targetText, userInput),
+    [targetText, userInput]
+  )
 
-  // Авто-скролл к текущему символу (только внутри typing-area)
   useEffect(() => {
-    if (currentCharRef.current && codeDisplayRef.current) {
-      const currentChar = currentCharRef.current
-      const container = codeDisplayRef.current
-      
-      const charRect = currentChar.getBoundingClientRect()
-      const containerRect = container.getBoundingClientRect()
-      const relativeTop = charRect.top - containerRect.top
-      
-      // Скроллим только если символ выходит за пределы видимой области
-      if (relativeTop < 20 || relativeTop > containerRect.height - 20) {
-        currentChar.scrollIntoView({ behavior: 'auto', block: 'nearest' })
+    typingAreaRef.current?.focus({ preventScroll: true })
+  }, [selectedBlock, mode])
+
+  useEffect(() => {
+    if (!currentCharRef.current || !typingAreaRef.current) return
+
+    const currentChar = currentCharRef.current
+    const container = typingAreaRef.current
+
+    const animationFrame = requestAnimationFrame(() => {
+      const charTop = currentChar.offsetTop
+      const charBottom = charTop + currentChar.offsetHeight
+      const viewTop = container.scrollTop
+      const viewBottom = viewTop + container.clientHeight
+      const safePadding = 32
+
+      if (charTop < viewTop + safePadding) {
+        container.scrollTop = Math.max(charTop - safePadding, 0)
+      } else if (charBottom > viewBottom - safePadding) {
+        container.scrollTop = charBottom - container.clientHeight + safePadding
       }
-    }
+    })
+
+    return () => cancelAnimationFrame(animationFrame)
   }, [userInput])
 
-  // Фокус на input при клике
+  const resetTypingState = useCallback(() => {
+    setUserInput('')
+    setStartTime(null)
+    setEndTime(null)
+    setStats(null)
+    setIsComplete(false)
+  }, [setUserInput, setStartTime, setEndTime, setStats, setIsComplete])
+
   const handleContainerClick = () => {
-    inputRef.current?.focus()
+    typingAreaRef.current?.focus({ preventScroll: true })
   }
 
-  // Обработка ввода - используем onKeyDown для перехвата всех клавиш
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Escape для перезапуска
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!targetText) return
+
     if (e.key === 'Escape') {
       e.preventDefault()
-      setUserInput('')
-      setStartTime(null)
-      setEndTime(null)
-      setStats(null)
-      setIsComplete(false)
-      setTimeout(() => inputRef.current?.focus(), 50)
+      resetTypingState()
+      typingAreaRef.current?.focus({ preventScroll: true })
       return
     }
 
-    // Tab для вставки отступа (4 пробела)
     if (e.key === 'Tab') {
       e.preventDefault()
       const newValue = userInput + '    '
       if (newValue.length <= targetText.length) {
+        if (!startTime) setStartTime(Date.now())
         setUserInput(newValue)
       }
       return
     }
 
-    // Обработка специальных клавиш
     if (e.key === 'Backspace') {
-      // Разрешаем Backspace
       return
     }
 
-    // Все остальные клавиши обрабатываем вручную
     if (e.key.length === 1 || e.key === 'Enter') {
       e.preventDefault()
-      
-      const newValue = userInput + (e.key === 'Enter' ? '\n' : e.key)
-      
-      if (newValue.length <= targetText.length) {
-        setUserInput(newValue)
 
-        if (!startTime) {
-          setStartTime(Date.now())
-        }
+      const nextChar = e.key === 'Enter' ? '\n' : e.key
+      const newValue = userInput + nextChar
 
-        // Проверка завершения
-        if (newValue.length === targetText.length && !isComplete) {
-          setEndTime(Date.now())
-          setIsComplete(true)
+      if (newValue.length > targetText.length) return
 
-          const result = processTyping(targetText, newValue)
-          const finalStats = calculateStats(
-            startTime || Date.now(),
-            Date.now(),
-            newValue.length,
-            result.correctChars,
-            result.errors
-          )
-          setStats(finalStats)
-        }
+      setUserInput(newValue)
+
+      if (!startTime) {
+        setStartTime(Date.now())
+      }
+
+      if (newValue.length === targetText.length && !isComplete) {
+        const endTime = Date.now()
+        setEndTime(endTime)
+        setIsComplete(true)
+
+        const result = processTyping(targetText, newValue)
+        const finalStats = calculateStats(
+          startTime || endTime,
+          endTime,
+          newValue.length,
+          result.correctChars,
+          result.errors
+        )
+        setStats(finalStats)
       }
     }
   }
 
   const handleModeToggle = () => {
     setMode(mode === 'full-file' ? 'code-block' : 'full-file')
-    setUserInput('')
-    setStartTime(null)
-    setEndTime(null)
-    setStats(null)
-    setIsComplete(false)
-    setTimeout(() => inputRef.current?.focus(), 50)
+    resetTypingState()
+    setTimeout(() => typingAreaRef.current?.focus({ preventScroll: true }), 0)
   }
 
-  // Рендеринг текста с подсветкой
   const renderCodeDisplay = () => {
     if (!targetText) return null
 
     return targetText.split('').map((char, index) => {
       const status = charStatuses[index]
       const isCurrent = index === userInput.length
-      
+
       let className = 'char '
 
       if (status === 'correct') {
@@ -197,7 +184,10 @@ export function Trainer() {
     })
   }
 
-  const progress = targetText ? (userInput.length / targetText.length) * 100 : 0
+  const progress = useMemo(
+    () => (targetText ? (userInput.length / targetText.length) * 100 : 0),
+    [targetText, userInput.length]
+  )
 
   return (
     <div className="trainer">
@@ -218,27 +208,27 @@ export function Trainer() {
 
         <div className="trainer-controls">
           <button onClick={handleModeToggle} className="mode-btn">
-            {mode === 'full-file' ? '📄 Весь файл' : '🔹 Блок кода'}
+            {mode === 'full-file' ? 'Режим: Блок кода' : 'Режим: Весь файл'}
           </button>
         </div>
       </div>
 
-      {stats && isComplete && (
+      {stats && (
         <div className="stats-bar">
           <div className="stat">
             <div className="stat-value">{stats.wpm}</div>
             <div className="stat-label">WPM</div>
           </div>
           <div className="stat">
-            <div className="stat-value">{stats.cpm}</div>
-            <div className="stat-label">CPM</div>
-          </div>
-          <div className="stat">
             <div className="stat-value">{stats.accuracy}%</div>
             <div className="stat-label">Точность</div>
           </div>
           <div className="stat">
-            <div className="stat-value">{stats.duration}с</div>
+            <div className="stat-value">{stats.errors}</div>
+            <div className="stat-label">Ошибки</div>
+          </div>
+          <div className="stat">
+            <div className="stat-value">{stats.duration}s</div>
             <div className="stat-label">Время</div>
           </div>
         </div>
@@ -249,49 +239,26 @@ export function Trainer() {
       </div>
 
       <div
+        ref={typingAreaRef}
         className="typing-area"
         onClick={handleContainerClick}
-        ref={codeDisplayRef}
+        onKeyDown={handleKeyDown}
         tabIndex={0}
       >
-        {targetText ? (
-          <div className="code-display">
-            {renderCodeDisplay()}
-          </div>
-        ) : (
-          <div className="loading">
-            Выберите файл для начала тренировки
-          </div>
-        )}
-
-        {/* Скрытый input для перехвата ввода */}
-        <input
-          ref={inputRef}
-          type="text"
-          className="hidden-input"
-          value=""
-          onKeyDown={handleKeyDown}
-          disabled={!targetText || isComplete}
-          autoComplete="off"
-          autoCorrect="off"
-          autoCapitalize="off"
-          spellCheck="false"
-        />
+        <div className="code-display">
+          {renderCodeDisplay()}
+        </div>
       </div>
 
       {isComplete && (
         <div className="complete-message">
-          🎉 Тренировка завершена! Нажми <strong>Escape</strong> для перезапуска
+          🎉 Отлично! Упражнение завершено
         </div>
       )}
 
-      {!isComplete && targetText && (
-        <div className="hint-message">
-          <strong>Tab</strong> — отступ &nbsp;|&nbsp; 
-          <strong>Enter</strong> — перенос строки &nbsp;|&nbsp; 
-          <strong>Escape</strong> — перезапуск
-        </div>
-      )}
+      <div className="hint-message">
+        ESC - перезапуск | TAB - 4 пробела | Кликните по области для фокуса
+      </div>
     </div>
   )
 }
