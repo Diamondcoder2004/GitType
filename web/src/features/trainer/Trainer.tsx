@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useCallback } from 'react'
-import { shallow } from 'zustand/shallow'
+import { useShallow } from 'zustand/shallow'
 import { useAppStore } from '../../store/appStore'
 import { processTyping, getCharStatuses } from '../../core/typing/typingEngine'
 import { calculateStats } from '../../core/typing/statsEngine'
@@ -21,7 +21,7 @@ export function Trainer() {
     setIsComplete,
     setMode,
   } = useAppStore(
-    (state) => ({
+    useShallow((state) => ({
       mode: state.mode,
       selectedBlock: state.selectedBlock,
       fileContent: state.fileContent,
@@ -35,8 +35,7 @@ export function Trainer() {
       setStats: state.setStats,
       setIsComplete: state.setIsComplete,
       setMode: state.setMode,
-    }),
-    shallow
+    }))
   )
 
   const typingAreaRef = useRef<HTMLDivElement>(null)

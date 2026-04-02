@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import { shallow } from 'zustand/shallow'
+import { useShallow } from 'zustand/shallow'
 import { useAppStore } from './store/appStore'
 import { githubClient } from './core/github/githubClient'
 import { buildFileTree, filterTreeByExtension } from './core/repository/treeBuilder'
@@ -46,7 +46,7 @@ function App() {
     setLanguageFilter,
     resetTrainer,
   } = useAppStore(
-    (state) => ({
+    useShallow((state) => ({
       token: state.token,
       selectedRepo: state.selectedRepo,
       fileTree: state.fileTree,
@@ -62,18 +62,17 @@ function App() {
       setSelectedBlock: state.setSelectedBlock,
       setLanguageFilter: state.setLanguageFilter,
       resetTrainer: state.resetTrainer,
-    }),
-    shallow
+    }))
   )
 
   // Инициализация токена при загрузке
   useEffect(() => {
     const savedToken = localStorage.getItem('github_token')
     const envToken = import.meta.env.VITE_GITHUB_TOKEN
-    
-    if (savedToken) {
+
+    if (savedToken && !token) {
       setToken(savedToken)
-    } else if (envToken) {
+    } else if (envToken && !token) {
       setToken(envToken)
       localStorage.setItem('github_token', envToken)
     }
@@ -105,7 +104,7 @@ function App() {
     }
 
     loadFileTree()
-  }, [selectedRepo, token, setFileTree])
+  }, [selectedRepo?.owner, selectedRepo?.repo, token])
 
   // Загрузка содержимого файла при выборе
   useEffect(() => {
@@ -137,7 +136,7 @@ function App() {
     }
 
     loadFileContent()
-  }, [selectedFile, selectedRepo, token, setFileContent, setCodeBlocks, setSelectedBlock, resetTrainer])
+  }, [selectedFile, selectedRepo?.owner, selectedRepo?.repo, token])
 
   // Фильтрация дерева по языку
   const filteredTree = useMemo(
