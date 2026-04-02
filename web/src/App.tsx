@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
+import { shallow } from 'zustand/shallow'
 import { useAppStore } from './store/appStore'
 import { githubClient } from './core/github/githubClient'
 import { buildFileTree, filterTreeByExtension } from './core/repository/treeBuilder'
@@ -44,7 +45,26 @@ function App() {
     setSelectedBlock,
     setLanguageFilter,
     resetTrainer,
-  } = useAppStore()
+  } = useAppStore(
+    (state) => ({
+      token: state.token,
+      selectedRepo: state.selectedRepo,
+      fileTree: state.fileTree,
+      selectedFile: state.selectedFile,
+      fileContent: state.fileContent,
+      selectedBlock: state.selectedBlock,
+      languageFilter: state.languageFilter,
+      setToken: state.setToken,
+      setFileTree: state.setFileTree,
+      setSelectedFile: state.setSelectedFile,
+      setFileContent: state.setFileContent,
+      setCodeBlocks: state.setCodeBlocks,
+      setSelectedBlock: state.setSelectedBlock,
+      setLanguageFilter: state.setLanguageFilter,
+      resetTrainer: state.resetTrainer,
+    }),
+    shallow
+  )
 
   // Инициализация токена при загрузке
   useEffect(() => {
@@ -99,12 +119,10 @@ function App() {
           selectedFile,
           token
         )
-        console.log('File content loaded:', content.substring(0, 100) + '...')
         setFileContent(content)
 
         // Извлекаем блоки кода
         const blocks = extractCodeBlocks(content, selectedFile)
-        console.log('Extracted blocks:', blocks)
         setCodeBlocks(blocks)
 
         // Выбираем случайный блок для режима code-block
@@ -122,9 +140,10 @@ function App() {
   }, [selectedFile, selectedRepo, token, setFileContent, setCodeBlocks, setSelectedBlock, resetTrainer])
 
   // Фильтрация дерева по языку
-  const filteredTree = languageFilter !== 'all'
-    ? filterTreeByExtension(fileTree, languageFilter)
-    : fileTree
+  const filteredTree = useMemo(
+    () => (languageFilter !== 'all' ? filterTreeByExtension(fileTree, languageFilter) : fileTree),
+    [languageFilter, fileTree]
+  )
 
   const handleFileSelect = (path: string) => {
     setSelectedFile(path)
