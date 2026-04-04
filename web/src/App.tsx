@@ -60,6 +60,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   showMinimap: false,
   highlightNextChar: false,
   githubToken: '',
+  caretStyle: 'block',
+  caretColor: 'theme',
+  textStyle: 'normal',
 }
 
 function App() {
@@ -365,6 +368,9 @@ function App() {
               bracketPairColorization={settings.bracketPairColorization}
               indentationGuides={settings.indentationGuides}
               highlightNextChar={settings.highlightNextChar}
+              caretStyle={settings.caretStyle}
+              caretColor={settings.caretColor}
+              textStyle={settings.textStyle}
             />
           ) : (
             <div className="no-file-screen">

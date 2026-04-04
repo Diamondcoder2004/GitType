@@ -13,6 +13,9 @@ interface TrainerProps {
   bracketPairColorization?: boolean
   indentationGuides?: boolean
   highlightNextChar?: boolean
+  caretStyle?: 'block' | 'line' | 'underline' | 'block-outline'
+  caretColor?: string
+  textStyle?: 'normal' | 'bright' | 'muted'
 }
 
 export function Trainer({
@@ -22,6 +25,9 @@ export function Trainer({
   bracketPairColorization = false,
   indentationGuides = false,
   highlightNextChar = false,
+  caretStyle = 'block',
+  caretColor = 'theme',
+  textStyle = 'normal',
 }: TrainerProps) {
   const {
     mode,
@@ -78,6 +84,16 @@ export function Trainer({
   useEffect(() => {
     userInputRef.current = userInput
   }, [userInput])
+
+  // Применяем цвет курсора
+  useEffect(() => {
+    const root = document.documentElement
+    if (caretColor === 'theme') {
+      root.style.removeProperty('--caret-color')
+    } else {
+      root.style.setProperty('--caret-color', caretColor)
+    }
+  }, [caretColor])
 
   const targetText = useMemo(
     () => (mode === 'full-file' ? fileContent || '' : selectedBlock?.code || ''),
@@ -433,6 +449,8 @@ export function Trainer({
         onFocus={handleFocus}
         onBlur={handleBlur}
         tabIndex={0}
+        data-caret-style={caretStyle}
+        data-text-style={textStyle}
       >
         <div className="code-display" style={{ fontSize: `${fontSize}px`, lineHeight: 1.55 }}>
           {displayText && (() => {

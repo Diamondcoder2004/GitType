@@ -11,6 +11,11 @@ export interface AppSettings {
   showMinimap: boolean
   highlightNextChar: boolean
   githubToken: string
+  // Cursor customization
+  caretStyle: 'block' | 'line' | 'underline' | 'block-outline'
+  caretColor: string
+  // Text style
+  textStyle: 'normal' | 'bright' | 'muted'
 }
 
 const THEMES = [
@@ -20,6 +25,29 @@ const THEMES = [
   { name: 'Светлая', id: 'light', colors: { bg: '#f0f0f0', main: '#007acc', text: '#333333' } },
   { name: 'Ночная', id: 'night', colors: { bg: '#1a1a2e', main: '#e94560', text: '#eaeaea' } },
   { name: 'Океан', id: 'ocean', colors: { bg: '#1b262c', main: '#64ffda', text: '#e6f1ff' } },
+]
+
+const CARET_STYLES = [
+  { id: 'block' as const, label: 'Блок', icon: '█' },
+  { id: 'block-outline' as const, label: 'Контур', icon: '▯' },
+  { id: 'line' as const, label: 'Линия', icon: '|' },
+  { id: 'underline' as const, label: 'Подчёрк', icon: '▁' },
+]
+
+const CARET_COLORS = [
+  { id: 'theme', label: 'Как тема', color: '#e2b714' },
+  { id: '#ff6b6b', label: 'Красный', color: '#ff6b6b' },
+  { id: '#51e5ff', label: 'Голубой', color: '#51e5ff' },
+  { id: '#66d9ef', label: 'Синий', color: '#66d9ef' },
+  { id: '#a6e22e', label: 'Зелёный', color: '#a6e22e' },
+  { id: '#f92672', label: 'Розовый', color: '#f92672' },
+  { id: '#ffffff', label: 'Белый', color: '#ffffff' },
+]
+
+const TEXT_STYLES = [
+  { id: 'normal' as const, label: 'Обычный', desc: 'Стандартная видимость' },
+  { id: 'bright' as const, label: 'Яркий', desc: 'Контрастные символы' },
+  { id: 'muted' as const, label: 'Приглушённый', desc: 'Мягкие цвета' },
 ]
 
 interface SettingsProps {
@@ -53,6 +81,30 @@ export function Settings({ settings, onSettingsChange, onClose }: SettingsProps)
 
   const handleSoundToggle = () => {
     const newSettings = { ...localSettings, soundEnabled: !localSettings.soundEnabled }
+    setLocalSettings(newSettings)
+    onSettingsChange(newSettings)
+    localStorage.setItem('gittype_settings', JSON.stringify(newSettings))
+  }
+
+  const handleCaretStyleChange = (style: AppSettings['caretStyle']) => {
+    const newSettings = { ...localSettings, caretStyle: style }
+    setLocalSettings(newSettings)
+    onSettingsChange(newSettings)
+    localStorage.setItem('gittype_settings', JSON.stringify(newSettings))
+  }
+
+  const handleCaretColorChange = (color: string) => {
+    const newSettings = { ...localSettings, caretColor: color }
+    setLocalSettings(newSettings)
+    onSettingsChange(newSettings)
+    localStorage.setItem('gittype_settings', JSON.stringify(newSettings))
+    // Применяем CSS переменную
+    const root = document.documentElement
+    root.style.setProperty('--caret-color', color === 'theme' ? '' : color)
+  }
+
+  const handleTextStyleChange = (style: AppSettings['textStyle']) => {
+    const newSettings = { ...localSettings, textStyle: style }
     setLocalSettings(newSettings)
     onSettingsChange(newSettings)
     localStorage.setItem('gittype_settings', JSON.stringify(newSettings))
@@ -297,6 +349,65 @@ export function Settings({ settings, onSettingsChange, onClose }: SettingsProps)
             </div>
           </section>
 
+          {/* Курсор */}
+          <section className="settings-section">
+            <h3>🔹 Курсор</h3>
+            <div className="caret-settings">
+              <div className="setting-group">
+                <label className="setting-label">Стиль курсора</label>
+                <div className="caret-style-grid">
+                  {CARET_STYLES.map(style => (
+                    <button
+                      key={style.id}
+                      className={`caret-style-btn ${localSettings.caretStyle === style.id ? 'active' : ''}`}
+                      onClick={() => handleCaretStyleChange(style.id)}
+                    >
+                      <span className="caret-icon-preview" style={{ color: localSettings.caretColor === 'theme' ? 'var(--main-color)' : localSettings.caretColor }}>
+                        {style.icon}
+                      </span>
+                      <span className="caret-style-label">{style.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="setting-group">
+                <label className="setting-label">Цвет курсора</label>
+                <div className="caret-color-grid">
+                  {CARET_COLORS.map(color => (
+                    <button
+                      key={color.id}
+                      className={`caret-color-btn ${localSettings.caretColor === color.id ? 'active' : ''}`}
+                      onClick={() => handleCaretColorChange(color.id)}
+                      title={color.label}
+                    >
+                      <span
+                        className="caret-color-swatch"
+                        style={{ backgroundColor: color.color }}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Стиль текста */}
+          <section className="settings-section">
+            <h3>🔤 Стиль текста</h3>
+            <div className="text-style-grid">
+              {TEXT_STYLES.map(style => (
+                <button
+                  key={style.id}
+                  className={`text-style-btn ${localSettings.textStyle === style.id ? 'active' : ''}`}
+                  onClick={() => handleTextStyleChange(style.id)}
+                >
+                  <span className="text-style-name">{style.label}</span>
+                  <span className="text-style-desc">{style.desc}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
           {/* Сохранение настроек — авто, только сброс */}
           <section className="settings-section">
             <h3>💾 Настройки сохраняются автоматически</h3>
@@ -314,6 +425,9 @@ export function Settings({ settings, onSettingsChange, onClose }: SettingsProps)
                     showMinimap: false,
                     highlightNextChar: false,
                     githubToken: '',
+                    caretStyle: 'block',
+                    caretColor: 'theme',
+                    textStyle: 'normal',
                   }
                   setLocalSettings(defaultSettings)
                   onSettingsChange(defaultSettings)

@@ -241,12 +241,12 @@
   position: relative;
 }
 
-/* Caret — тонкая вертикальная линия */
+/* Caret — тонкая вертикальная линия (по умолчанию) */
 .caret {
   display: inline-block;
   width: 2px;
   height: 1.25em;
-  background-color: var(--main-color);
+  background-color: var(--caret-color, var(--main-color));
   position: absolute;
   left: 0;
   top: 0.1em;
@@ -261,9 +261,83 @@
   vertical-align: text-bottom;
 }
 
+/* ===== CARET STYLES ===== */
+/* Block — заполненный блок */
+.typing-area[data-caret-style="block"] .caret {
+  width: 0.6em;
+  height: 1.25em;
+  background-color: var(--caret-color, var(--main-color));
+  border-radius: 2px;
+  left: 0;
+  top: 0;
+}
+
+/* Block outline — контур блока */
+.typing-area[data-caret-style="block-outline"] .caret {
+  width: 0.6em;
+  height: 1.25em;
+  background-color: transparent;
+  border: 2px solid var(--caret-color, var(--main-color));
+  border-radius: 2px;
+  left: 0;
+  top: 0;
+}
+
+/* Line — тонкая линия (default) */
+.typing-area[data-caret-style="line"] .caret {
+  width: 2px;
+  height: 1.25em;
+  background-color: var(--caret-color, var(--main-color));
+  border-radius: 1px;
+  left: 0;
+  top: 0.1em;
+}
+
+/* Underline — подчёркивание */
+.typing-area[data-caret-style="underline"] .caret {
+  width: 0.6em;
+  height: 2px;
+  background-color: var(--caret-color, var(--main-color));
+  border-radius: 1px;
+  left: 0;
+  top: 1.2em;
+}
+
 @keyframes caret-blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
+}
+
+/* ===== TEXT STYLES ===== */
+/* Bright — более контрастные символы */
+.typing-area[data-text-style="bright"] .char.correct {
+  color: #ffffff;
+  text-shadow: 0 0 4px rgba(255, 255, 255, 0.15);
+}
+
+.typing-area[data-text-style="bright"] .char.pending {
+  color: #c0c0c8;
+  opacity: 1;
+}
+
+.typing-area[data-text-style="bright"] .char.incorrect {
+  color: #ff5555;
+  background: rgba(255, 68, 68, 0.3);
+}
+
+/* Muted — приглушённые цвета */
+.typing-area[data-text-style="muted"] .char.correct {
+  color: #c8c8c8;
+}
+
+.typing-area[data-text-style="muted"] .char.pending {
+  color: #7a7a82;
+  opacity: 0.85;
+}
+
+.typing-area[data-text-style="muted"] .char.incorrect {
+  color: #cc4444;
+  background: rgba(204, 68, 68, 0.15);
 }
 
 /* Pending — хорошая видимость */
