@@ -155,7 +155,7 @@ export function Trainer({
     })
 
     return () => cancelAnimationFrame(animationFrame)
-  }, [userInput])
+  }, [userInput, caretStyle])
 
   // Автофокус при монтировании
   useEffect(() => {
@@ -345,6 +345,17 @@ export function Trainer({
       const isCurrent = globalIndex === userInput.length
       const char = lineText[i]
 
+      // Рендерим caret ПЕРЕД текущим символом
+      if (isCurrent) {
+        chars.push(
+          <span
+            key={`caret-${lineIndex}`}
+            ref={caretRef}
+            className={lineIndex === textLines.length - 1 && i === lineText.length - 1 ? 'caret caret-end' : 'caret'}
+          />
+        )
+      }
+
       // Bracket pair colorization
       let bracketClass = ''
       if (bracketPairColorization) {
@@ -362,17 +373,22 @@ export function Trainer({
           char={char}
           status={status}
           isCurrent={isCurrent}
-          caretRef={isCurrent ? caretRef : undefined}
           bracketClass={bracketClass}
           isNextChar={isNextChar}
         />
       )
     }
 
-    // Если курсор в конце этой строки
+    // Если курсор в самом конце строки (после последнего символа)
     const cursorAtLineEnd = userInput.length === globalStartIndex + lineText.length
-    if (cursorAtLineEnd) {
-      chars.push(<span key={`caret-${lineIndex}`} ref={caretRef} className={lineIndex === textLines.length - 1 ? 'caret caret-end' : 'caret'} />)
+    if (cursorAtLineEnd && lineText.length > 0) {
+      chars.push(
+        <span
+          key={`caret-end-${lineIndex}`}
+          ref={caretRef}
+          className={lineIndex === textLines.length - 1 ? 'caret caret-end' : 'caret'}
+        />
+      )
     }
 
     return (

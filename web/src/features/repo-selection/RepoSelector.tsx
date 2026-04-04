@@ -1,18 +1,25 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useShallow } from 'zustand/shallow'
 import { useAppStore } from '../../store/appStore'
+import { githubClient } from '../../core/github/githubClient'
+import type { SearchResult } from '../../core/github/githubClient'
 import './RepoSelector.css'
 
 export function RepoSelector() {
-  const { token, setToken, selectedRepo, setSelectedRepo } = useAppStore(
+  const { token, selectedRepo, setSelectedRepo } = useAppStore(
     useShallow((state) => ({
       token: state.token,
-      setToken: state.setToken,
       selectedRepo: state.selectedRepo,
       setSelectedRepo: state.setSelectedRepo,
     }))
   )
   const [repoInput, setRepoInput] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   // Инициализация input из выбранного репо
   useEffect(() => {
@@ -21,27 +28,119 @@ export function RepoSelector() {
     }
   }, [selectedRepo])
 
+  // Debounce поиска
+  useEffect(() => {
+    if (!token || searchQuery.length < 2) {
+      setSearchResults([])
+      setShowDropdown(false)
+      return
+    }
+
+    setIsSearching(true)
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+
+    searchTimerRef.current = setTimeout(async () => {
+      try {
+        const results = await githubClient.searchRepos(searchQuery, token)
+        setSearchResults(results)
+        setShowDropdown(true)
+      } catch (err) {
+        console.error('Search error:', err)
+        setSearchResults([])
+      } finally {
+        setIsSearching(false)
+      }
+    }, 400)
+
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+    }
+  }, [searchQuery, token])
+
+  // Закрытие dropdown при клике вне
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const [owner, repo] = repoInput.split('/')
     if (owner && repo) {
       setSelectedRepo(owner.trim(), repo.trim())
+      setShowDropdown(false)
     }
   }
 
+  const handleSelectRepo = useCallback((result: SearchResult) => {
+    const [owner, repo] = result.full_name.split('/')
+    setSelectedRepo(owner, repo)
+    setRepoInput(result.full_name)
+    setSearchQuery('')
+    setSearchResults([])
+    setShowDropdown(false)
+  }, [setSelectedRepo])
+
   return (
-    <form onSubmit={handleSubmit} className="repo-selector">
-      <input
-        type="text"
-        placeholder="owner/repo"
-        value={repoInput}
-        onChange={(e) => setRepoInput(e.target.value)}
-        className="repo-input"
-      />
-      <button type="submit" className="submit-btn">
-        Загрузить
-      </button>
-    </form>
+    <div className="repo-selector" ref={dropdownRef}>
+      <form onSubmit={handleSubmit} className="repo-selector-form">
+        <input
+          type="text"
+          placeholder="owner/repo или поиск..."
+          value={showDropdown ? searchQuery : repoInput}
+          onChange={(e) => {
+            const val = e.target.value
+            setRepoInput(val)
+            setSearchQuery(val)
+          }}
+          onFocus={() => {
+            if (searchResults.length > 0) setShowDropdown(true)
+          }}
+          className="repo-input"
+        />
+        <button type="submit" className="submit-btn">
+          Загрузить
+        </button>
+      </form>
+
+      {/* Search dropdown */}
+      {showDropdown && (searchResults.length > 0 || isSearching) && (
+        <div className="repo-search-dropdown">
+          {isSearching && (
+            <div className="repo-search-loading">
+              <span className="loading-spinner">⏳</span>
+              <span>Поиск репозиториев...</span>
+            </div>
+          )}
+          {searchResults.map((result) => (
+            <button
+              key={result.id}
+              className="repo-search-item"
+              onClick={() => handleSelectRepo(result)}
+            >
+              <div className="repo-search-name">
+                <span className="repo-name-full">{result.full_name}</span>
+              </div>
+              {result.description && (
+                <div className="repo-search-desc">{result.description}</div>
+              )}
+              <div className="repo-search-meta">
+                {result.language && (
+                  <span className="repo-lang">{result.language}</span>
+                )}
+                <span className="repo-stars">★ {result.stargazers_count.toLocaleString()}</span>
+                <span className="repo-forks">⑂ {result.forks_count.toLocaleString()}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -58,6 +157,12 @@ export function RepoSelectorLarge() {
     }))
   )
   const [repoInput, setRepoInput] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (selectedRepo) {
@@ -65,16 +170,66 @@ export function RepoSelectorLarge() {
     }
   }, [selectedRepo])
 
+  // Debounce поиска
+  useEffect(() => {
+    if (!token || searchQuery.length < 2) {
+      setSearchResults([])
+      setShowDropdown(false)
+      return
+    }
+
+    setIsSearching(true)
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+
+    searchTimerRef.current = setTimeout(async () => {
+      try {
+        const results = await githubClient.searchRepos(searchQuery, token)
+        setSearchResults(results)
+        setShowDropdown(true)
+      } catch (err) {
+        console.error('Search error:', err)
+        setSearchResults([])
+      } finally {
+        setIsSearching(false)
+      }
+    }, 400)
+
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+    }
+  }, [searchQuery, token])
+
+  // Закрытие dropdown при клике вне
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const [owner, repo] = repoInput.split('/')
     if (owner && repo) {
       setSelectedRepo(owner.trim(), repo.trim())
+      setShowDropdown(false)
     }
   }
 
+  const handleSelectRepo = useCallback((result: SearchResult) => {
+    const [owner, repo] = result.full_name.split('/')
+    setSelectedRepo(owner, repo)
+    setRepoInput(result.full_name)
+    setSearchQuery('')
+    setSearchResults([])
+    setShowDropdown(false)
+  }, [setSelectedRepo])
+
   return (
-    <div className="repo-selector-large">
+    <div className="repo-selector-large" ref={dropdownRef}>
       {/* Token input */}
       <div className="token-row">
         <label className="token-label">GitHub Token</label>
@@ -91,25 +246,67 @@ export function RepoSelectorLarge() {
         </span>
       </div>
 
-      {/* Repo input */}
-      <form onSubmit={handleSubmit} className="repo-form-large">
+      {/* Repo input with search */}
+      <div className="repo-form-large">
         <label className="repo-label">Репозиторий</label>
         <div className="repo-input-row">
-          <input
-            type="text"
-            placeholder="facebook/react"
-            value={repoInput}
-            onChange={(e) => setRepoInput(e.target.value)}
-            className="repo-input-large"
-          />
-          <button type="submit" className="submit-btn-large">
-            Загрузить
-          </button>
+          <form onSubmit={handleSubmit} className="repo-search-wrapper">
+            <input
+              type="text"
+              placeholder="facebook/react или поиск по названию..."
+              value={showDropdown ? searchQuery : repoInput}
+              onChange={(e) => {
+                const val = e.target.value
+                setRepoInput(val)
+                setSearchQuery(val)
+              }}
+              onFocus={() => {
+                if (searchResults.length > 0) setShowDropdown(true)
+              }}
+              className="repo-input-large"
+            />
+            <button type="submit" className="submit-btn-large">
+              Загрузить
+            </button>
+          </form>
         </div>
         <span className="repo-hint">
-          Введите owner/repo любого публичного репозитория
+          Введите owner/repo или начните печатать для поиска
         </span>
-      </form>
+
+        {/* Search dropdown */}
+        {showDropdown && (searchResults.length > 0 || isSearching) && (
+          <div className="repo-search-dropdown">
+            {isSearching && (
+              <div className="repo-search-loading">
+                <span className="loading-spinner">⏳</span>
+                <span>Поиск репозиториев...</span>
+              </div>
+            )}
+            {searchResults.map((result) => (
+              <button
+                key={result.id}
+                className="repo-search-item"
+                onClick={() => handleSelectRepo(result)}
+              >
+                <div className="repo-search-name">
+                  <span className="repo-name-full">{result.full_name}</span>
+                </div>
+                {result.description && (
+                  <div className="repo-search-desc">{result.description}</div>
+                )}
+                <div className="repo-search-meta">
+                  {result.language && (
+                    <span className="repo-lang">{result.language}</span>
+                  )}
+                  <span className="repo-stars">★ {result.stargazers_count.toLocaleString()}</span>
+                  <span className="repo-forks">⑂ {result.forks_count.toLocaleString()}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       {selectedRepo && (
         <div className="selected-repo-badge">

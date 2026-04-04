@@ -211,7 +211,7 @@
   flex: 1;
   padding-left: 0.5em;
   padding-right: 1em;
-  display: inline;
+  display: block;
 }
 
 /* ===== CHARACTERS ===== */
@@ -241,66 +241,75 @@
   position: relative;
 }
 
-/* Caret — тонкая вертикальная линия (по умолчанию) */
-.caret {
-  display: inline-block;
-  width: 2px;
-  height: 1.25em;
-  background-color: var(--caret-color, var(--main-color));
-  position: absolute;
-  left: 0;
-  top: 0.1em;
-  border-radius: 1px;
-  animation: caret-blink 1.2s ease-in-out infinite;
-  pointer-events: none;
-  z-index: 10;
-}
-
-.caret.caret-end {
-  position: relative;
-  vertical-align: text-bottom;
-}
-
 /* ===== CARET STYLES ===== */
 /* Block — заполненный блок */
 .typing-area[data-caret-style="block"] .caret {
+  display: inline-block;
   width: 0.6em;
   height: 1.25em;
   background-color: var(--caret-color, var(--main-color));
   border-radius: 2px;
-  left: 0;
-  top: 0;
+  vertical-align: text-bottom;
+  animation: caret-blink 1.2s ease-in-out infinite;
+  margin: 0 -0.05em;
+  flex-shrink: 0;
 }
 
 /* Block outline — контур блока */
 .typing-area[data-caret-style="block-outline"] .caret {
+  display: inline-block;
   width: 0.6em;
   height: 1.25em;
   background-color: transparent;
   border: 2px solid var(--caret-color, var(--main-color));
   border-radius: 2px;
-  left: 0;
-  top: 0;
+  vertical-align: text-bottom;
+  animation: caret-blink 1.2s ease-in-out infinite;
+  margin: 0 -0.05em;
+  flex-shrink: 0;
 }
 
 /* Line — тонкая линия (default) */
 .typing-area[data-caret-style="line"] .caret {
+  display: inline-block;
   width: 2px;
   height: 1.25em;
   background-color: var(--caret-color, var(--main-color));
   border-radius: 1px;
-  left: 0;
-  top: 0.1em;
+  vertical-align: text-bottom;
+  animation: caret-blink 1.2s ease-in-out infinite;
+  margin: 0 -0.05em;
+  flex-shrink: 0;
 }
 
 /* Underline — подчёркивание */
 .typing-area[data-caret-style="underline"] .caret {
+  display: inline-block;
   width: 0.6em;
   height: 2px;
   background-color: var(--caret-color, var(--main-color));
   border-radius: 1px;
-  left: 0;
-  top: 1.2em;
+  vertical-align: text-bottom;
+  animation: caret-blink 1.2s ease-in-out infinite;
+  margin: 0 -0.05em;
+  flex-shrink: 0;
+}
+
+/* Default caret (no data attribute) */
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.25em;
+  background-color: var(--caret-color, var(--main-color));
+  border-radius: 1px;
+  vertical-align: text-bottom;
+  animation: caret-blink 1.2s ease-in-out infinite;
+  margin: 0 -0.05em;
+  flex-shrink: 0;
+}
+
+.caret.caret-end {
+  /* caret-end больше не нужен для inline подхода */
 }
 
 @keyframes caret-blink {

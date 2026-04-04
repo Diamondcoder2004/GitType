@@ -5,6 +5,21 @@ export interface Repo {
   full_name: string
   private: boolean
   html_url: string
+  description?: string
+  language?: string
+  stargazers_count?: number
+}
+
+export interface SearchResult {
+  id: number
+  full_name: string
+  name: string
+  html_url: string
+  description: string | null
+  language: string | null
+  stargazers_count: number
+  forks_count: number
+  updated_at: string
 }
 
 export interface GitHubFile {
@@ -86,6 +101,32 @@ export class GitHubClient {
     }
 
     throw new Error(`No content found at ${path}`)
+  }
+
+  async searchRepos(
+    query: string,
+    token: string,
+    perPage: number = 15
+  ): Promise<SearchResult[]> {
+    const octokit = new Octokit({ auth: token })
+    const { data } = await octokit.search.repos({
+      q: query,
+      sort: 'stars',
+      order: 'desc',
+      per_page: perPage,
+    })
+
+    return data.items.map((item) => ({
+      id: item.id,
+      full_name: item.full_name,
+      name: item.name,
+      html_url: item.html_url,
+      description: item.description,
+      language: item.language,
+      stargazers_count: item.stargazers_count,
+      forks_count: item.forks_count,
+      updated_at: item.updated_at,
+    }))
   }
 }
 

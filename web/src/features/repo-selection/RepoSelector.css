@@ -173,3 +173,131 @@
   color: var(--main-color);
   font-family: var(--font-mono);
 }
+
+/* ===== Search Dropdown ===== */
+.repo-selector {
+  position: relative;
+}
+
+.repo-selector-form {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.repo-search-wrapper {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex: 1;
+  position: relative;
+}
+
+.repo-search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: #2a2a2e;
+  border: 1px solid rgba(100, 102, 105, 0.4);
+  border-radius: 8px;
+  max-height: 360px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.repo-search-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  color: var(--sub-color);
+  font-size: 0.85rem;
+}
+
+.loading-spinner {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.repo-search-item {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(100, 102, 105, 0.15);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.repo-search-item:last-child {
+  border-bottom: none;
+}
+
+.repo-search-item:hover {
+  background: rgba(226, 183, 20, 0.08);
+}
+
+.repo-search-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-color);
+  font-family: var(--font-mono);
+  margin-bottom: 0.2rem;
+}
+
+.repo-name-full {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+.repo-search-desc {
+  font-size: 0.75rem;
+  color: var(--sub-color);
+  margin-bottom: 0.35rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.repo-search-meta {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  font-size: 0.7rem;
+  color: var(--sub-color);
+}
+
+.repo-lang {
+  background: rgba(100, 102, 105, 0.3);
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.65rem;
+}
+
+.repo-stars {
+  color: #e2b714;
+}
+
+.repo-forks {
+  color: var(--sub-color);
+}
+
+/* Welcome screen dropdown */
+.repo-form-large .repo-search-dropdown {
+  position: relative;
+  top: 0;
+  margin-top: 0.5rem;
+  max-height: 400px;
+}
