@@ -193,50 +193,74 @@
   position: relative;
 }
 
+/* Dropdown — общий стиль */
 .repo-search-dropdown {
   position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  margin-top: 4px;
-  background: #2a2a2e;
-  border: 1px solid rgba(100, 102, 105, 0.4);
-  border-radius: 8px;
-  max-height: 360px;
+  top: calc(100% + 6px);
+  left: -8px;
+  right: -8px;
+  background: #232427;
+  border: 1px solid rgba(100, 102, 105, 0.3);
+  border-radius: 12px;
+  max-height: 420px;
   overflow-y: auto;
   z-index: 1000;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  animation: dropdown-slide 0.2s ease-out;
+  backdrop-filter: blur(8px);
 }
 
+@keyframes dropdown-slide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading state */
 .repo-search-loading {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1rem;
   color: var(--sub-color);
   font-size: 0.85rem;
+  font-family: var(--font-mono);
 }
 
 .loading-spinner {
   display: inline-block;
-  animation: spin 1s linear infinite;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(100, 102, 105, 0.3);
+  border-top-color: var(--main-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
+/* Search item */
 .repo-search-item {
   display: block;
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 0.875rem 1.125rem;
   background: transparent;
   border: none;
-  border-bottom: 1px solid rgba(100, 102, 105, 0.15);
+  border-bottom: 1px solid rgba(100, 102, 105, 0.1);
   text-align: left;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all 0.15s ease;
+  position: relative;
 }
 
 .repo-search-item:last-child {
@@ -244,60 +268,267 @@
 }
 
 .repo-search-item:hover {
-  background: rgba(226, 183, 20, 0.08);
+  background: rgba(226, 183, 20, 0.06);
 }
 
+.repo-search-item:active {
+  background: rgba(226, 183, 20, 0.1);
+}
+
+/* Repo name */
 .repo-search-name {
+  margin-bottom: 0.3rem;
+}
+
+.repo-name-full {
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--text-color);
   font-family: var(--font-mono);
-  margin-bottom: 0.2rem;
-}
-
-.repo-name-full {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   display: block;
 }
 
+/* Highlight owner part */
+.repo-name-full::before {
+  content: '';
+}
+
+/* Description */
 .repo-search-desc {
-  font-size: 0.75rem;
-  color: var(--sub-color);
-  margin-bottom: 0.35rem;
+  font-size: 0.78rem;
+  color: #888;
+  margin-bottom: 0.5rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 1.4;
 }
 
+/* Meta badges */
 .repo-search-meta {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.5rem;
   align-items: center;
-  font-size: 0.7rem;
-  color: var(--sub-color);
+  flex-wrap: wrap;
 }
 
 .repo-lang {
-  background: rgba(100, 102, 105, 0.3);
-  padding: 0.1rem 0.4rem;
-  border-radius: 3px;
-  font-size: 0.65rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: rgba(100, 102, 105, 0.2);
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.68rem;
+  color: #b0b0b0;
+  border: 1px solid rgba(100, 102, 105, 0.2);
 }
 
+/* Language dot */
+.repo-lang::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #51e5ff;
+}
+
+.repo-lang[data-lang="TypeScript"]::before,
+.repo-lang[data-lang="tsx"]::before { background: #3178c6; }
+.repo-lang[data-lang="JavaScript"]::before,
+.repo-lang[data-lang="jsx"]::before { background: #f7df1e; }
+.repo-lang[data-lang="Python"]::before { background: #3776ab; }
+.repo-lang[data-lang="Go"]::before { background: #00add8; }
+.repo-lang[data-lang="Rust"]::before { background: #dea584; }
+.repo-lang[data-lang="Java"]::before { background: #ed8b00; }
+.repo-lang[data-lang="C++"]::before { background: #00599c; }
+.repo-lang[data-lang="Vue"]::before { background: #42b883; }
+
 .repo-stars {
-  color: #e2b714;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  color: #c0a030;
+  font-weight: 500;
+}
+
+.repo-stars::before {
+  content: '★';
+  font-size: 0.75rem;
 }
 
 .repo-forks {
-  color: var(--sub-color);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  color: #888;
 }
 
-/* Welcome screen dropdown */
+.repo-forks::before {
+  content: '⑂';
+  font-size: 0.8rem;
+}
+
+/* ===== Welcome screen dropdown ===== */
 .repo-form-large .repo-search-dropdown {
   position: relative;
   top: 0;
-  margin-top: 0.5rem;
-  max-height: 400px;
+  left: 0;
+  right: 0;
+  margin-top: 0.75rem;
+  max-height: 450px;
+  border-radius: 12px;
+}
+
+/* ===== Compact header input improvements ===== */
+.repo-input {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(100, 102, 105, 0.4);
+  color: var(--text-color);
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-family: var(--font-mono);
+  width: 220px;
+  transition: all 0.2s;
+}
+
+.repo-input:focus {
+  outline: none;
+  border-color: var(--main-color);
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 0 3px rgba(226, 183, 20, 0.1);
+}
+
+.repo-input::placeholder {
+  color: var(--sub-color);
+  opacity: 0.6;
+}
+
+.submit-btn {
+  background: var(--main-color);
+  color: var(--bg-color);
+  border: none;
+  padding: 0.4rem 0.9rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.submit-btn:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(226, 183, 20, 0.3);
+}
+
+.submit-btn:active {
+  transform: translateY(0);
+}
+
+/* ===== Welcome screen improvements ===== */
+.repo-selector-large {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.token-input-large {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(100, 102, 105, 0.4);
+  color: var(--text-color);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: var(--font-mono);
+  transition: all 0.2s;
+}
+
+.token-input-large:focus {
+  outline: none;
+  border-color: var(--main-color);
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 0 3px rgba(226, 183, 20, 0.12);
+}
+
+.token-input-large::placeholder {
+  color: var(--sub-color);
+  opacity: 0.5;
+}
+
+.repo-input-large {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(100, 102, 105, 0.4);
+  color: var(--text-color);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: var(--font-mono);
+  transition: all 0.2s;
+}
+
+.repo-input-large:focus {
+  outline: none;
+  border-color: var(--main-color);
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 0 3px rgba(226, 183, 20, 0.12);
+}
+
+.repo-input-large::placeholder {
+  color: var(--sub-color);
+  opacity: 0.5;
+}
+
+.submit-btn-large {
+  background: var(--main-color);
+  color: var(--bg-color);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.submit-btn-large:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(226, 183, 20, 0.3);
+}
+
+.submit-btn-large:active {
+  transform: translateY(0);
+}
+
+/* Scrollbar for dropdown */
+.repo-search-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.repo-search-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.repo-search-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(100, 102, 105, 0.4);
+  border-radius: 3px;
+}
+
+.repo-search-dropdown::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 102, 105, 0.6);
 }

@@ -131,10 +131,10 @@ export function RepoSelector() {
               )}
               <div className="repo-search-meta">
                 {result.language && (
-                  <span className="repo-lang">{result.language}</span>
+                  <span className="repo-lang" data-lang={result.language}>{result.language}</span>
                 )}
-                <span className="repo-stars">★ {result.stargazers_count.toLocaleString()}</span>
-                <span className="repo-forks">⑂ {result.forks_count.toLocaleString()}</span>
+                <span className="repo-stars">{result.stargazers_count.toLocaleString()}</span>
+                <span className="repo-forks">{result.forks_count.toLocaleString()}</span>
               </div>
             </button>
           ))}
@@ -297,10 +297,10 @@ export function RepoSelectorLarge() {
                 )}
                 <div className="repo-search-meta">
                   {result.language && (
-                    <span className="repo-lang">{result.language}</span>
+                    <span className="repo-lang" data-lang={result.language}>{result.language}</span>
                   )}
-                  <span className="repo-stars">★ {result.stargazers_count.toLocaleString()}</span>
-                  <span className="repo-forks">⑂ {result.forks_count.toLocaleString()}</span>
+                  <span className="repo-stars">{result.stargazers_count.toLocaleString()}</span>
+                  <span className="repo-forks">{result.forks_count.toLocaleString()}</span>
                 </div>
               </button>
             ))}
