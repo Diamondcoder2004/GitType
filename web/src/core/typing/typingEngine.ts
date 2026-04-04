@@ -11,6 +11,19 @@ export interface TypingMode {
 }
 
 /**
+ * Нормализует дефисы и тире к единому символу
+ * Решает проблему когда в коде используется en-dash/em-dash,
+ * а пользователь вводит обычный hyphen-minus с клавиатуры
+ */
+function normalizeDash(char: string): string {
+  // Все виды дефисов/тире → обычный hyphen-minus (U+002D)
+  if (char === '–' || char === '—' || char === '−' || char === '‐' || char === '‑' || char === '‒') {
+    return '-'
+  }
+  return char
+}
+
+/**
  * Движок проверки ввода пользователя
  * Pure function
  */
@@ -26,7 +39,8 @@ export function processTyping(
     if (mode.type === 'ignoreWhitespace') {
       return expected.trim() === actual.trim()
     }
-    return expected === actual
+    // Нормализуем дефисы перед сравнением
+    return normalizeDash(expected) === normalizeDash(actual)
   }
 
   for (let i = 0; i < userInput.length; i++) {
@@ -66,7 +80,7 @@ export function isCharCorrect(
   if (index >= target.length || index >= userInput.length) {
     return false
   }
-  return target[index] === userInput[index]
+  return normalizeDash(target[index]) === normalizeDash(userInput[index])
 }
 
 /**
@@ -80,7 +94,9 @@ export function getCharStatuses(
 
   for (let i = 0; i < target.length; i++) {
     if (i < userInput.length) {
-      statuses.push(target[i] === userInput[i] ? 'correct' : 'incorrect')
+      statuses.push(
+        normalizeDash(target[i]) === normalizeDash(userInput[i]) ? 'correct' : 'incorrect'
+      )
     } else if (i === userInput.length) {
       statuses.push('current')
     } else {
@@ -89,4 +105,21 @@ export function getCharStatuses(
   }
 
   return statuses
+}
+
+/**
+ * Находит позицию начала слова перед текущей позицией
+ * Используется для Ctrl+Backspace
+ */
+export function findWordBoundary(text: string, position: number): number {
+  // Идём назад, пропуская пробелы
+  let pos = position - 1
+  while (pos > 0 && /\s/.test(text[pos])) {
+    pos--
+  }
+  // Идём назад, пока встречаем символы слов (буквы, цифры, _)
+  while (pos > 0 && /[\w]/.test(text[pos - 1])) {
+    pos--
+  }
+  return pos
 }

@@ -2,41 +2,50 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 1rem;
+  padding: 0;
   overflow: hidden;
+  min-height: 0;
+  height: 100%;
 }
 
+/* ===== HEADER ===== */
 .trainer-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--sub-color);
+  padding: 0.4rem 1.25rem;
+  border-bottom: 1px solid rgba(100, 102, 105, 0.3);
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.1);
+  min-height: 36px;
 }
 
 .block-info {
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
   align-items: center;
   font-family: var(--font-mono);
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .block-type {
   background: var(--main-color);
   color: var(--bg-color);
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-weight: bold;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .block-name {
   color: var(--text-color);
-}
-
-.block-complexity {
-  color: var(--sub-color);
+  font-size: 0.8rem;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .trainer-controls {
@@ -45,176 +54,365 @@
 }
 
 .mode-btn {
-  background: var(--sub-color);
+  background: rgba(100, 102, 105, 0.3);
   color: var(--text-color);
-  border: none;
-  padding: 0.5rem 1rem;
+  border: 1px solid rgba(100, 102, 105, 0.5);
+  padding: 0.2rem 0.6rem;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.85rem;
-  transition: background 0.2s;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  transition: all 0.15s;
 }
 
 .mode-btn:hover {
   background: var(--main-color);
   color: var(--bg-color);
+  border-color: var(--main-color);
 }
 
+/* ===== COMPACT STATS ===== */
 .stats-bar {
   display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 3rem;
-  margin-bottom: 1rem;
-  padding: 1rem;
-  background: var(--sub-color);
-  border-radius: 8px;
+  gap: 1.25rem;
+  padding: 0.3rem 1rem;
+  background: rgba(0, 0, 0, 0.15);
+  border-bottom: 1px solid rgba(100, 102, 105, 0.2);
+  flex-shrink: 0;
+  min-height: 32px;
+  font-family: var(--font-mono);
+  transition: opacity 0.2s;
 }
 
-.stat {
-  text-align: center;
+.stats-placeholder {
+  opacity: 0.4;
+}
+
+.stat-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
 }
 
 .stat-value {
-  font-size: 2rem;
-  font-weight: bold;
+  font-size: 1rem;
+  font-weight: 600;
   color: var(--main-color);
   font-family: var(--font-mono);
+  min-width: 2ch;
+  text-align: right;
 }
 
 .stat-label {
-  font-size: 0.85rem;
-  color: var(--text-color);
-  margin-top: 0.25rem;
+  font-size: 0.65rem;
+  color: var(--sub-color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
+.stat-errors {
+  color: #ff4444;
+}
+
+.stat-separator {
+  width: 1px;
+  height: 16px;
+  background: rgba(100, 102, 105, 0.3);
+}
+
+.stat-progress {
+  min-width: 3ch;
+}
+
+.stat-progress .stat-value {
+  color: var(--text-color);
+}
+
+/* ===== PROGRESS BAR ===== */
 .progress-bar {
-  height: 4px;
-  background: var(--sub-color);
-  border-radius: 2px;
+  height: 3px;
+  background: rgba(100, 102, 105, 0.2);
   overflow: hidden;
-  margin-bottom: 1rem;
+  flex-shrink: 0;
 }
 
 .progress-fill {
   height: 100%;
-  background: var(--main-color);
-  transition: width 0.3s;
+  background: linear-gradient(90deg, var(--main-color), #f0c040);
+  transition: width 0.2s ease;
+  border-radius: 0 2px 2px 0;
 }
 
+/* ===== TYPING AREA ===== */
 .typing-area {
   flex: 1;
+  min-height: 0;
   background: #1e1e1e;
-  border-radius: 8px;
-  padding: 1.5rem;
   position: relative;
   outline: none;
   cursor: text;
   overflow: auto;
   overscroll-behavior: contain;
   overflow-anchor: none;
-  border: 2px solid var(--sub-color);
+  padding: 0;
+  transition: background 0.2s ease;
 }
 
 .typing-area:focus {
-  border-color: var(--main-color);
-  box-shadow: 0 0 0 2px rgba(226, 183, 20, 0.2);
+  background: #1a1a1a;
 }
 
+.typing-area.focused {
+  background: #1a1a1a;
+}
+
+.typing-area.completed {
+  background: #1a2e1a;
+}
+
+/* ===== CODE DISPLAY WITH LINE NUMBERS ===== */
 .code-display {
   font-family: var(--font-mono);
-  font-size: 1.1rem;
-  line-height: 1.6;
   white-space: pre;
   word-break: normal;
   position: relative;
   color: #b5b5b5;
   min-height: 100%;
+  padding: 0.75rem 0;
 }
 
-.char {
-  transition: color 0.05s;
+.code-line {
+  display: flex;
+  min-height: 1.55em;
   position: relative;
 }
 
-/* Правильно напечатанные символы */
+.code-line:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.line-number {
+  display: inline-block;
+  width: 3.5em;
+  text-align: right;
+  padding-right: 1em;
+  color: #4a4a4a;
+  font-size: 0.85em;
+  user-select: none;
+  flex-shrink: 0;
+  border-right: 1px solid rgba(100, 102, 105, 0.15);
+  margin-right: 1em;
+  opacity: 0.6;
+}
+
+.line-content {
+  flex: 1;
+  padding-left: 0.5em;
+  padding-right: 1em;
+  display: inline;
+}
+
+/* ===== CHARACTERS ===== */
+.char {
+  position: relative;
+  transition: color 0.08s ease, background-color 0.08s ease;
+  border-radius: 2px;
+}
+
+/* Правильно напечатанные — яркий белый */
 .char.correct {
-  color: #ffffff;
+  color: #f5f5f5;
 }
 
-/* Ошибки */
+/* Ошибки — яркий красный */
 .char.incorrect {
-  color: #ff6b6b;
-  background: rgba(255, 107, 107, 0.25);
+  color: #ff4444;
+  background: rgba(255, 68, 68, 0.2);
   border-radius: 2px;
 }
 
-/* Текущий символ (курсор) */
+/* Текущий символ */
 .char.current {
-  background-color: var(--main-color);
   color: #1e1e1e;
-  animation: blink 1s infinite;
   border-radius: 2px;
-  font-weight: bold;
+  animation: none;
+  position: relative;
 }
 
-/* Ещё не напечатанные символы (полупрозрачные) */
+/* Caret — тонкая вертикальная линия */
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.25em;
+  background-color: var(--main-color);
+  position: absolute;
+  left: 0;
+  top: 0.1em;
+  border-radius: 1px;
+  animation: caret-blink 1.2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.caret.caret-end {
+  position: relative;
+  vertical-align: text-bottom;
+}
+
+@keyframes caret-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Pending — хорошая видимость */
 .char.pending {
-  color: #6b6b6b;
-  opacity: 0.5;
+  color: #a1a1aa;
+  opacity: 1;
 }
 
-@keyframes blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0.7; }
+/* ===== BRACKET PAIR COLORIZATION ===== */
+.char.bracket-1 { color: #ffd700; }
+.char.bracket-2 { color: #da70d6; }
+.char.bracket-3 { color: #179fff; }
+
+.char.correct.bracket-1 { color: #ffd700; }
+.char.correct.bracket-2 { color: #da70d6; }
+.char.correct.bracket-3 { color: #179fff; }
+
+.char.pending.bracket-1 { color: #b8960f; opacity: 0.6; }
+.char.pending.bracket-2 { color: #9b4f9b; opacity: 0.6; }
+.char.pending.bracket-3 { color: #0f6fb8; opacity: 0.6; }
+
+/* ===== HIGHLIGHT NEXT CHAR ===== */
+.char.next-char-highlight {
+  background: rgba(226, 183, 20, 0.15);
+  border-bottom: 2px solid var(--main-color);
+  border-radius: 0 0 2px 2px;
 }
 
+/* ===== INDENTATION GUIDES ===== */
+.line-content[data-indent-level] {
+  position: relative;
+}
 
-.complete-message {
-  text-align: center;
-  padding: 1rem;
-  font-size: 1.25rem;
+.line-content[data-indent-level]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: calc(var(--indent-level, 1) * 2em);
+  border-left: 1px solid rgba(100, 102, 105, 0.2);
+  pointer-events: none;
+}
+
+.line-content[data-indent-level="1"]::before { width: 2em; }
+.line-content[data-indent-level="2"]::before { width: 4em; }
+.line-content[data-indent-level="3"]::before { width: 6em; }
+.line-content[data-indent-level="4"]::before { width: 8em; }
+.line-content[data-indent-level="5"]::before { width: 10em; }
+.line-content[data-indent-level="6"]::before { width: 12em; }
+.line-content[data-indent-level="7"]::before { width: 14em; }
+.line-content[data-indent-level="8"]::before { width: 16em; }
+
+/* ===== COMPLETE BAR ===== */
+.complete-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1.25rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(100, 102, 105, 0.3);
+  flex-shrink: 0;
+}
+
+.complete-text {
   color: var(--main-color);
-  font-weight: bold;
-  margin-top: 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
 }
 
-.hint-message {
-  text-align: center;
-  color: var(--sub-color);
-  margin-top: 1rem;
-  font-size: 0.85rem;
+.complete-actions {
+  display: flex;
+  gap: 0.5rem;
 }
 
-.loading {
-  text-align: center;
-  padding: 2rem;
-  color: var(--sub-color);
+.action-btn {
+  padding: 0.35rem 0.8rem;
+  border-radius: 4px;
+  border: 1px solid var(--sub-color);
+  background: transparent;
+  color: var(--text-color);
+  font-size: 0.8rem;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: all 0.15s;
 }
 
-.no-block {
+.action-btn:hover {
+  background: rgba(100, 102, 105, 0.3);
+}
+
+.action-btn.primary {
+  background: var(--main-color);
+  color: var(--bg-color);
+  border-color: var(--main-color);
+  font-weight: 600;
+}
+
+.action-btn.primary:hover {
+  filter: brightness(1.1);
+}
+
+/* ===== HINT BAR ===== */
+.hint-bar {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  gap: 0.3rem;
+  padding: 0.3rem 1rem;
+  background: rgba(0, 0, 0, 0.15);
+  border-top: 1px solid rgba(100, 102, 105, 0.2);
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  color: #888;
+  font-family: var(--font-mono);
+}
+
+.hint-key {
+  display: inline-block;
+  background: rgba(100, 102, 105, 0.3);
   color: var(--text-color);
-  font-size: 1.1rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  border: 1px solid rgba(100, 102, 105, 0.4);
 }
 
-/* Scrollbar styles */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+.hint-sep {
+  color: var(--sub-color);
+  margin: 0 0.15rem;
 }
 
-::-webkit-scrollbar-track {
-  background: #1a1a1a;
+/* ===== SCROLLBAR ===== */
+.typing-area::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-::-webkit-scrollbar-thumb {
-  background: var(--sub-color);
-  border-radius: 5px;
+.typing-area::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-::-webkit-scrollbar-thumb:hover {
+.typing-area::-webkit-scrollbar-thumb {
+  background: rgba(100, 102, 105, 0.4);
+  border-radius: 4px;
+}
+
+.typing-area::-webkit-scrollbar-thumb:hover {
   background: var(--main-color);
 }

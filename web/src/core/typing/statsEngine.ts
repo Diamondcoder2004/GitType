@@ -8,6 +8,10 @@ export interface TypingStats {
   errors: number
 }
 
+export interface LiveStats extends TypingStats {
+  isLive: true
+}
+
 export interface TimingData {
   startTime: number
   endTime: number
@@ -115,5 +119,63 @@ export function calculateAverageStats(statsArray: TypingStats[]): TypingStats {
     totalChars: Math.round(sum.totalChars / count),
     correctChars: Math.round(sum.correctChars / count),
     errors: Math.round(sum.errors / count),
+  }
+}
+
+/**
+ * Нормализует дефисы и тире к единому символу
+ */
+function normalizeDash(char: string): string {
+  if (char === '–' || char === '—' || char === '−' || char === '‐' || char === '‑' || char === '‒') {
+    return '-'
+  }
+  return char
+}
+
+/**
+ * Вычисляет live-статистику в реальном времени
+ * Использует текущее время для расчёта
+ */
+export function calculateLiveStats(
+  startTime: number,
+  userInput: string,
+  targetText: string
+): LiveStats | null {
+  if (!startTime || userInput.length === 0) return null
+
+  const now = Date.now()
+  const durationMs = now - startTime
+  const duration = Math.round(durationMs / 1000)
+  const durationMinutes = durationMs / 1000 / 60
+
+  // Считаем правильные символы
+  let correctChars = 0
+  let errors = 0
+  for (let i = 0; i < userInput.length; i++) {
+    if (i < targetText.length) {
+      if (normalizeDash(targetText[i]) === normalizeDash(userInput[i])) {
+        correctChars++
+      } else {
+        errors++
+      }
+    } else {
+      errors++
+    }
+  }
+
+  const totalChars = userInput.length
+  const accuracy = totalChars > 0 ? Math.round((correctChars / totalChars) * 100) : 100
+  const cpm = durationMinutes > 0 ? Math.round(correctChars / durationMinutes) : 0
+  const wpm = durationMinutes > 0 ? Math.round((correctChars / 5) / durationMinutes) : 0
+
+  return {
+    cpm,
+    wpm,
+    accuracy,
+    duration,
+    totalChars,
+    correctChars,
+    errors,
+    isLive: true,
   }
 }

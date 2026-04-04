@@ -2,6 +2,11 @@ import { CodeBlock, LanguageAdapter } from './languageAdapter'
 import { languageRegistry } from './languageAdapter'
 import './typescript.adapter'
 import './python.adapter'
+import './markdown.adapter'
+import './yaml.adapter'
+import './dockerfile.adapter'
+import './vue.adapter'
+import './universal.adapter'
 
 /**
  * Извлекает семантические блоки кода из файла
@@ -11,8 +16,10 @@ export function extractCodeBlocks(
   code: string,
   filePath: string
 ): CodeBlock[] {
-  const extension = filePath.split('.').pop()?.toLowerCase() || ''
-  const adapter = languageRegistry.getAdapter(extension)
+  const parts = filePath.split('/')
+  const fileName = parts[parts.length - 1] || ''
+  const extension = fileName.includes('.') ? fileName.split('.').pop()?.toLowerCase() || '' : ''
+  const adapter = languageRegistry.getAdapter(extension, fileName)
 
   if (!adapter) {
     console.log(`No adapter for extension: ${extension}`)

@@ -76,6 +76,40 @@
   padding: 2rem;
 }
 
+/* Token settings */
+.token-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.token-settings-input {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--sub-color);
+  color: var(--text-color);
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-family: var(--font-mono);
+  transition: all 0.15s;
+}
+
+.token-settings-input:focus {
+  outline: none;
+  border-color: var(--main-color);
+  box-shadow: 0 0 0 2px rgba(226, 183, 20, 0.15);
+}
+
+.token-settings-input::placeholder {
+  color: var(--sub-color);
+  opacity: 0.6;
+}
+
+.token-settings-hint {
+  font-size: 0.75rem;
+  color: var(--sub-color);
+}
+
 .settings-section {
   margin-bottom: 2.5rem;
 }
@@ -216,6 +250,17 @@
   align-items: center;
   gap: 1rem;
   cursor: pointer;
+  margin-bottom: 0.75rem;
+}
+
+.toggle-label:last-child {
+  margin-bottom: 0;
+}
+
+.ide-features {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .toggle-checkbox {

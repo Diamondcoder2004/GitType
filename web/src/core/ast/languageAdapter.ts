@@ -48,14 +48,30 @@ export interface LanguageAdapter {
  */
 export class LanguageAdapterRegistry {
   private adapters: Map<string, LanguageAdapter> = new Map()
+  private fileMatchers: Array<{ pattern: RegExp | string; adapter: LanguageAdapter }> = []
 
   register(adapter: LanguageAdapter): void {
     for (const ext of adapter.extensions) {
-      this.adapters.set(ext, adapter)
+      // Если расширение содержит точку или выглядит как имя файла — это file matcher
+      if (ext.includes('.') || ext.toLowerCase() === ext) {
+        this.adapters.set(ext.toLowerCase(), adapter)
+      }
     }
   }
 
-  getAdapter(extension: string): LanguageAdapter | null {
+  registerFileMatcher(pattern: RegExp | string, adapter: LanguageAdapter): void {
+    this.fileMatchers.push({ pattern, adapter })
+  }
+
+  getAdapter(extension: string, fileName?: string): LanguageAdapter | null {
+    // Сначала проверяем file matchers (для Dockerfile, Makefile и т.д.)
+    if (fileName) {
+      const lowerName = fileName.toLowerCase()
+      for (const { pattern, adapter } of this.fileMatchers) {
+        if (pattern instanceof RegExp && pattern.test(lowerName)) return adapter
+        if (typeof pattern === 'string' && lowerName === pattern) return adapter
+      }
+    }
     return this.adapters.get(extension.toLowerCase()) || null
   }
 

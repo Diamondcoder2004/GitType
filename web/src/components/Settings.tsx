@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import './Settings.css'
 
 export interface AppSettings {
@@ -6,6 +6,11 @@ export interface AppSettings {
   fontSize: number
   soundEnabled: boolean
   smoothCaret: boolean
+  bracketPairColorization: boolean
+  indentationGuides: boolean
+  showMinimap: boolean
+  highlightNextChar: boolean
+  githubToken: string
 }
 
 const THEMES = [
@@ -34,18 +39,23 @@ export function Settings({ settings, onSettingsChange, onClose }: SettingsProps)
     setLocalSettings(newSettings)
     applyTheme(theme.colors)
     onSettingsChange(newSettings)
+    // Авто-сохранение
+    localStorage.setItem('gittype_settings', JSON.stringify(newSettings))
+    localStorage.setItem('gittype_theme', themeId)
   }
 
   const handleFontSizeChange = (size: number) => {
     const newSettings = { ...localSettings, fontSize: size }
     setLocalSettings(newSettings)
     onSettingsChange(newSettings)
+    localStorage.setItem('gittype_settings', JSON.stringify(newSettings))
   }
 
   const handleSoundToggle = () => {
     const newSettings = { ...localSettings, soundEnabled: !localSettings.soundEnabled }
     setLocalSettings(newSettings)
     onSettingsChange(newSettings)
+    localStorage.setItem('gittype_settings', JSON.stringify(newSettings))
   }
 
   const applyTheme = (colors: { bg: string; main: string; text: string }) => {
@@ -77,6 +87,50 @@ export function Settings({ settings, onSettingsChange, onClose }: SettingsProps)
     }
   }, [])
 
+  // Escape для закрытия
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
+  // Focus trap
+  useEffect(() => {
+    const modal = document.querySelector('.settings-modal')
+    if (!modal) return
+
+    const focusable = modal.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )
+    if (focusable.length === 0) return
+
+    const firstFocusable = focusable[0] as HTMLElement
+    const lastFocusable = focusable[focusable.length - 1] as HTMLElement
+
+    firstFocusable.focus()
+
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstFocusable) {
+          e.preventDefault()
+          lastFocusable.focus()
+        }
+      } else {
+        if (document.activeElement === lastFocusable) {
+          e.preventDefault()
+          firstFocusable.focus()
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleTab)
+    return () => document.removeEventListener('keydown', handleTab)
+  }, [])
+
   return (
     <div className="settings-overlay" onClick={onClose}>
       <div className="settings-modal" onClick={e => e.stopPropagation()}>
@@ -86,6 +140,29 @@ export function Settings({ settings, onSettingsChange, onClose }: SettingsProps)
         </div>
 
         <div className="settings-content">
+          {/* GitHub Token */}
+          <section className="settings-section">
+            <h3>🔑 GitHub Token</h3>
+            <div className="token-settings">
+              <input
+                type="password"
+                placeholder="ghp_xxxxxxxxxxxx"
+                value={localSettings.githubToken || ''}
+                onChange={(e) => {
+                  const newSettings = { ...localSettings, githubToken: e.target.value }
+                  setLocalSettings(newSettings)
+                  onSettingsChange(newSettings)
+                  localStorage.setItem('gittype_settings', JSON.stringify(newSettings))
+                  if (e.target.value) localStorage.setItem('github_token', e.target.value)
+                }}
+                className="token-settings-input"
+              />
+              <span className="token-settings-hint">
+                {localSettings.githubToken ? '✓ Токен сохранён' : 'Нужен для доступа к GitHub API'}
+              </span>
+            </div>
+          </section>
+
           {/* Темы */}
           <section className="settings-section">
             <h3>🎨 Тема оформления</h3>
@@ -162,29 +239,81 @@ export function Settings({ settings, onSettingsChange, onClose }: SettingsProps)
             </label>
           </section>
 
-          {/* Сохранение настроек */}
+          {/* IDE-фишки */}
           <section className="settings-section">
-            <h3>💾 Управление настройками</h3>
+            <h3>🛠️ IDE-фишки</h3>
+            <div className="ide-features">
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
+                  checked={localSettings.bracketPairColorization}
+                  onChange={() => {
+                    const newSettings = { ...localSettings, bracketPairColorization: !localSettings.bracketPairColorization }
+                    setLocalSettings(newSettings)
+                    onSettingsChange(newSettings)
+                    localStorage.setItem('gittype_settings', JSON.stringify(newSettings))
+                  }}
+                  className="toggle-checkbox"
+                />
+                <span className={`toggle-switch ${localSettings.bracketPairColorization ? 'on' : 'off'}`}>
+                  <span className="toggle-knob" />
+                </span>
+                <span className="toggle-text">Подсветка парных скобок</span>
+              </label>
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
+                  checked={localSettings.indentationGuides}
+                  onChange={() => {
+                    const newSettings = { ...localSettings, indentationGuides: !localSettings.indentationGuides }
+                    setLocalSettings(newSettings)
+                    onSettingsChange(newSettings)
+                    localStorage.setItem('gittype_settings', JSON.stringify(newSettings))
+                  }}
+                  className="toggle-checkbox"
+                />
+                <span className={`toggle-switch ${localSettings.indentationGuides ? 'on' : 'off'}`}>
+                  <span className="toggle-knob" />
+                </span>
+                <span className="toggle-text">Линии отступов</span>
+              </label>
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
+                  checked={localSettings.highlightNextChar}
+                  onChange={() => {
+                    const newSettings = { ...localSettings, highlightNextChar: !localSettings.highlightNextChar }
+                    setLocalSettings(newSettings)
+                    onSettingsChange(newSettings)
+                    localStorage.setItem('gittype_settings', JSON.stringify(newSettings))
+                  }}
+                  className="toggle-checkbox"
+                />
+                <span className={`toggle-switch ${localSettings.highlightNextChar ? 'on' : 'off'}`}>
+                  <span className="toggle-knob" />
+                </span>
+                <span className="toggle-text">Подсветка следующего символа</span>
+              </label>
+            </div>
+          </section>
+
+          {/* Сохранение настроек — авто, только сброс */}
+          <section className="settings-section">
+            <h3>💾 Настройки сохраняются автоматически</h3>
             <div className="settings-actions">
-              <button
-                className="action-btn export"
-                onClick={() => {
-                  const data = JSON.stringify(localSettings, null, 2)
-                  localStorage.setItem('gittype_settings', data)
-                  localStorage.setItem('gittype_theme', localSettings.theme)
-                  alert('Настройки сохранены!')
-                }}
-              >
-                💾 Сохранить
-              </button>
               <button
                 className="action-btn reset"
                 onClick={() => {
                   const defaultSettings: AppSettings = {
                     theme: 'default',
                     fontSize: 16,
-                    soundEnabled: true,
+                    soundEnabled: false,
                     smoothCaret: true,
+                    bracketPairColorization: false,
+                    indentationGuides: false,
+                    showMinimap: false,
+                    highlightNextChar: false,
+                    githubToken: '',
                   }
                   setLocalSettings(defaultSettings)
                   onSettingsChange(defaultSettings)

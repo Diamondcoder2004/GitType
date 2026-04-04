@@ -116,7 +116,17 @@ export function filterTreeByExtension(
       return null
     }
 
+    const fileName = node.name.toLowerCase()
     const fileExt = node.name.split('.').pop()?.toLowerCase()
+
+    // Специальная обработка для Dockerfile, Makefile и т.д.
+    if (extension === 'dockerfile' && (fileName === 'dockerfile' || fileName.startsWith('dockerfile'))) {
+      return node
+    }
+    if (extension === 'makefile' && fileName === 'makefile') {
+      return node
+    }
+
     if (fileExt === extension) {
       return node
     }
