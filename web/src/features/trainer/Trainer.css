@@ -355,6 +355,14 @@
   opacity: 1;
 }
 
+/* Skipped — пропущенные символы (авто-ввод) */
+.char.skipped {
+  color: #555;
+  background: rgba(100, 102, 105, 0.15);
+  text-decoration: line-through;
+  text-decoration-color: rgba(100, 102, 105, 0.4);
+}
+
 /* ===== BRACKET PAIR COLORIZATION ===== */
 .char.bracket-1 { color: #ffd700; }
 .char.bracket-2 { color: #da70d6; }

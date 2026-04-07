@@ -18,6 +18,7 @@ export function RepoSelector() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
+  const [searchHasRun, setSearchHasRun] = useState(false)
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -33,24 +34,28 @@ export function RepoSelector() {
     if (!token || searchQuery.length < 2) {
       setSearchResults([])
       setShowDropdown(false)
+      setSearchHasRun(false)
       return
     }
 
     setIsSearching(true)
+    setSearchHasRun(false)
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
 
     searchTimerRef.current = setTimeout(async () => {
       try {
-        const results = await githubClient.searchRepos(searchQuery, token)
+        const results = await githubClient.searchRepos(searchQuery, token, 20)
         setSearchResults(results)
         setShowDropdown(true)
+        setSearchHasRun(true)
       } catch (err) {
         console.error('Search error:', err)
         setSearchResults([])
+        setSearchHasRun(true)
       } finally {
         setIsSearching(false)
       }
-    }, 400)
+    }, 300)
 
     return () => {
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
@@ -109,12 +114,18 @@ export function RepoSelector() {
       </form>
 
       {/* Search dropdown */}
-      {showDropdown && (searchResults.length > 0 || isSearching) && (
+      {showDropdown && (searchResults.length > 0 || isSearching || searchHasRun) && (
         <div className="repo-search-dropdown">
           {isSearching && (
             <div className="repo-search-loading">
-              <span className="loading-spinner">⏳</span>
+              <span className="loading-spinner" />
               <span>Поиск репозиториев...</span>
+            </div>
+          )}
+          {!isSearching && searchHasRun && searchResults.length === 0 && (
+            <div className="repo-search-empty">
+              <span className="repo-search-empty-icon">🔍</span>
+              <span className="repo-search-empty-text">Ничего не найдено по запросу «{searchQuery}»</span>
             </div>
           )}
           {searchResults.map((result) => (
@@ -161,6 +172,7 @@ export function RepoSelectorLarge() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
+  const [searchHasRun, setSearchHasRun] = useState(false)
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -175,24 +187,28 @@ export function RepoSelectorLarge() {
     if (!token || searchQuery.length < 2) {
       setSearchResults([])
       setShowDropdown(false)
+      setSearchHasRun(false)
       return
     }
 
     setIsSearching(true)
+    setSearchHasRun(false)
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
 
     searchTimerRef.current = setTimeout(async () => {
       try {
-        const results = await githubClient.searchRepos(searchQuery, token)
+        const results = await githubClient.searchRepos(searchQuery, token, 20)
         setSearchResults(results)
         setShowDropdown(true)
+        setSearchHasRun(true)
       } catch (err) {
         console.error('Search error:', err)
         setSearchResults([])
+        setSearchHasRun(true)
       } finally {
         setIsSearching(false)
       }
-    }, 400)
+    }, 300)
 
     return () => {
       if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
@@ -275,12 +291,18 @@ export function RepoSelectorLarge() {
         </span>
 
         {/* Search dropdown */}
-        {showDropdown && (searchResults.length > 0 || isSearching) && (
+        {showDropdown && (searchResults.length > 0 || isSearching || searchHasRun) && (
           <div className="repo-search-dropdown">
             {isSearching && (
               <div className="repo-search-loading">
-                <span className="loading-spinner">⏳</span>
+                <span className="loading-spinner" />
                 <span>Поиск репозиториев...</span>
+              </div>
+            )}
+            {!isSearching && searchHasRun && searchResults.length === 0 && (
+              <div className="repo-search-empty">
+                <span className="repo-search-empty-icon">🔍</span>
+                <span className="repo-search-empty-text">Ничего не найдено по запросу «{searchQuery}»</span>
               </div>
             )}
             {searchResults.map((result) => (

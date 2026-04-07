@@ -88,12 +88,15 @@ export function isCharCorrect(
  */
 export function getCharStatuses(
   target: string,
-  userInput: string
-): ('correct' | 'incorrect' | 'pending' | 'current')[] {
-  const statuses: ('correct' | 'incorrect' | 'pending' | 'current')[] = []
+  userInput: string,
+  skippedPositions?: Set<number> | null
+): ('correct' | 'incorrect' | 'pending' | 'current' | 'skipped')[] {
+  const statuses: ('correct' | 'incorrect' | 'pending' | 'current' | 'skipped')[] = []
 
   for (let i = 0; i < target.length; i++) {
-    if (i < userInput.length) {
+    if (skippedPositions?.has(i)) {
+      statuses.push('skipped')
+    } else if (i < userInput.length) {
       statuses.push(
         normalizeDash(target[i]) === normalizeDash(userInput[i]) ? 'correct' : 'incorrect'
       )
@@ -122,4 +125,31 @@ export function findWordBoundary(text: string, position: number): number {
     pos--
   }
   return pos
+}
+
+/**
+ * Находит позицию конца следующего слова от текущей позиции
+ * Используется для пропуска слова (Ctrl+Shift+Enter)
+ */
+export function findNextWordEnd(text: string, position: number): number {
+  let pos = position
+  // Пропускаем текущие пробелы до начала следующего слова
+  while (pos < text.length && /\s/.test(text[pos])) {
+    pos++
+  }
+  // Пропускаем символы следующего слова
+  while (pos < text.length && /[\w]/.test(text[pos])) {
+    pos++
+  }
+  return pos
+}
+
+/**
+ * Находит позицию конца текущей строки (до \n)
+ * Используется для пропуска строки (Ctrl+Enter)
+ */
+export function findLineEnd(text: string, position: number): number {
+  const newlineIndex = text.indexOf('\n', position)
+  if (newlineIndex === -1) return text.length
+  return newlineIndex + 1 // включаем \n
 }

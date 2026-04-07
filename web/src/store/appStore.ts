@@ -25,6 +25,7 @@ interface TrainerState {
   stats: TypingStats | null
   isComplete: boolean
   view: AppView
+  skippedPositions: Set<number> | null
 }
 
 interface Actions {
@@ -46,6 +47,7 @@ interface Actions {
   setStats: (stats: TypingStats | null) => void
   setIsComplete: (complete: boolean) => void
   setView: (view: AppView) => void
+  setSkippedPositions: (positions: Set<number> | null) => void
   resetTrainer: () => void
 }
 
@@ -68,6 +70,7 @@ const initialTrainerState: TrainerState = {
   stats: null,
   isComplete: false,
   view: 'repo-select',
+  skippedPositions: null,
 }
 
 export const useAppStore = create<RepoState & TrainerState & Actions>()((set) => ({
@@ -108,6 +111,8 @@ export const useAppStore = create<RepoState & TrainerState & Actions>()((set) =>
 
   setView: (view) => set({ view }),
 
+  setSkippedPositions: (positions) => set({ skippedPositions: positions }),
+
   resetTrainer: () =>
     set({
       userInput: '',
@@ -115,5 +120,6 @@ export const useAppStore = create<RepoState & TrainerState & Actions>()((set) =>
       endTime: null,
       stats: null,
       isComplete: false,
+      skippedPositions: null,
     }),
 }))

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useCallback, useState } from 'react'
 import { useShallow } from 'zustand/shallow'
 import { useAppStore } from '../../store/appStore'
-import { processTyping, getCharStatuses, findWordBoundary } from '../../core/typing/typingEngine'
+import { processTyping, getCharStatuses, findWordBoundary, findNextWordEnd, findLineEnd } from '../../core/typing/typingEngine'
 import { calculateStats, calculateLiveStats, TypingStats } from '../../core/typing/statsEngine'
 import { CharSpan } from './CharSpan'
 import './Trainer.css'
@@ -37,12 +37,14 @@ export function Trainer({
     startTime,
     isComplete,
     stats,
+    skippedPositions,
     setUserInput,
     setStartTime,
     setEndTime,
     setStats,
     setIsComplete,
     setMode,
+    setSkippedPositions,
     resetTrainer,
   } = useAppStore(
     useShallow((state) => ({
@@ -53,12 +55,14 @@ export function Trainer({
       startTime: state.startTime,
       isComplete: state.isComplete,
       stats: state.stats,
+      skippedPositions: state.skippedPositions,
       setUserInput: state.setUserInput,
       setStartTime: state.setStartTime,
       setEndTime: state.setEndTime,
       setStats: state.setStats,
       setIsComplete: state.setIsComplete,
       setMode: state.setMode,
+      setSkippedPositions: state.setSkippedPositions,
       resetTrainer: state.resetTrainer,
     }))
   )
@@ -110,8 +114,8 @@ export function Trainer({
   const textLines = useMemo(() => displayText.split('\n'), [displayText])
 
   const charStatuses = useMemo(
-    () => getCharStatuses(targetText, userInput),
-    [targetText, userInput]
+    () => getCharStatuses(targetText, userInput, skippedPositions),
+    [targetText, userInput, skippedPositions]
   )
 
   // Live stats обновление каждые 500ms
@@ -249,6 +253,66 @@ export function Trainer({
       e.preventDefault()
       resetTypingState()
       typingAreaRef.current?.focus({ preventScroll: true })
+      return
+    }
+
+    // Ctrl+Enter — пропуск строки
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
+      e.preventDefault()
+      if (isComplete) return
+      const currentPos = userInput.length
+      const skipTo = findLineEnd(targetText, currentPos)
+      if (skipTo > currentPos) {
+        // Отслеживаем пропущенные позиции
+        const newSkipped = new Set(skippedPositions || [])
+        for (let i = currentPos; i < skipTo; i++) {
+          newSkipped.add(i)
+        }
+        setSkippedPositions(newSkipped)
+
+        const newValue = targetText.slice(0, skipTo)
+        setUserInput(newValue)
+        if (!startTime) setStartTime(Date.now())
+        // Если пропустили до конца — завершаем
+        if (skipTo >= targetText.length) {
+          const endTime = Date.now()
+          setEndTime(endTime)
+          setIsComplete(true)
+          const result = processTyping(targetText, newValue)
+          const finalStats = calculateStats(startTime || endTime, endTime, newValue.length, result.correctChars, result.errors)
+          setStats(finalStats)
+        }
+      }
+      return
+    }
+
+    // Ctrl+Shift+Enter — пропуск слова
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.shiftKey) {
+      e.preventDefault()
+      if (isComplete) return
+      const currentPos = userInput.length
+      const skipTo = findNextWordEnd(targetText, currentPos)
+      if (skipTo > currentPos) {
+        // Отслеживаем пропущенные позиции
+        const newSkipped = new Set(skippedPositions || [])
+        for (let i = currentPos; i < skipTo; i++) {
+          newSkipped.add(i)
+        }
+        setSkippedPositions(newSkipped)
+
+        const newValue = targetText.slice(0, skipTo)
+        setUserInput(newValue)
+        if (!startTime) setStartTime(Date.now())
+        // Если пропустили до конца — завершаем
+        if (skipTo >= targetText.length) {
+          const endTime = Date.now()
+          setEndTime(endTime)
+          setIsComplete(true)
+          const result = processTyping(targetText, newValue)
+          const finalStats = calculateStats(startTime || endTime, endTime, newValue.length, result.correctChars, result.errors)
+          setStats(finalStats)
+        }
+      }
       return
     }
 
@@ -504,6 +568,10 @@ export function Trainer({
         <span className="hint-key">⌫</span> удалить
         <span className="hint-sep">·</span>
         <span className="hint-key">Ctrl+⌫</span> слово
+        <span className="hint-sep">·</span>
+        <span className="hint-key">Ctrl+↵</span> пропуск строки
+        <span className="hint-sep">·</span>
+        <span className="hint-key">Ctrl+⇧+↵</span> пропуск слова
         <span className="hint-sep">·</span>
         <span className="hint-key">ESC</span> сброс
       </div>

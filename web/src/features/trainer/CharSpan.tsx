@@ -2,7 +2,7 @@ import { memo } from 'react'
 
 interface CharSpanProps {
   char: string
-  status: 'correct' | 'incorrect' | 'pending' | 'current'
+  status: 'correct' | 'incorrect' | 'pending' | 'current' | 'skipped'
   isCurrent: boolean
   bracketClass?: string
   isNextChar?: boolean
@@ -22,6 +22,8 @@ export const CharSpan = memo(function CharSpan({
     className += 'correct'
   } else if (status === 'incorrect') {
     className += 'incorrect'
+  } else if (status === 'skipped') {
+    className += 'skipped'
   } else if (isCurrent) {
     className += 'current'
   } else {

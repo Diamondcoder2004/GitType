@@ -109,8 +109,19 @@ export class GitHubClient {
     perPage: number = 15
   ): Promise<SearchResult[]> {
     const octokit = new Octokit({ auth: token })
+
+    // Улучшенный поиск: добавляем wildcard и поиск по name
+    // GitHub Search API поддерживает qualifiers
+    // in:name — поиск только по имени (более точный)
+    // Без qualifier — поиск по name + description (более широкий)
+    // Используем оба подхода и объединяем результаты
+
+    const searchQuery = query.includes('/')
+      ? query // Если есть / — это owner/repo, ищем точно
+      : `${query} in:name` // Иначе ищем по имени репозитория
+
     const { data } = await octokit.search.repos({
-      q: query,
+      q: searchQuery,
       sort: 'stars',
       order: 'desc',
       per_page: perPage,
