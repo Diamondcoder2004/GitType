@@ -24,6 +24,35 @@ function normalizeDash(char: string): string {
 }
 
 /**
+ * Нормализует Unicode символы к ASCII эквивалентам
+ * Решает проблему когда в коде используются Unicode символы,
+ * а пользователь вводит обычные ASCII символы с клавиатуры
+ * ВАЖНО: замена только 1-к-1, не 1-к-многим (иначе сломается посимвольное сравнение)
+ */
+function normalizeUnicode(char: string): string {
+  // Кавычки
+  if (char === '\u201C' || char === '\u201D') return '"'  // " " → "
+  if (char === '\u2018' || char === '\u2019') return "'"  // ' ' → '
+  if (char === '\u00B4') return '`'                        // acute accent → backtick
+
+  // Пробелы
+  if (char === '\u00A0') return ' '  // Non-breaking space
+  if (char === '\u2003') return ' '  // Em space
+  if (char === '\u2002') return ' '  // En space
+  if (char === '\u2009') return ' '  // Thin space
+  if (char === '\u200B') return ''   // Zero-width space (убираем)
+
+  return char
+}
+
+/**
+ * Полная нормализация символа для сравнения
+ */
+export function normalizeChar(char: string): string {
+  return normalizeUnicode(normalizeDash(char))
+}
+
+/**
  * Движок проверки ввода пользователя
  * Pure function
  */
@@ -39,8 +68,8 @@ export function processTyping(
     if (mode.type === 'ignoreWhitespace') {
       return expected.trim() === actual.trim()
     }
-    // Нормализуем дефисы перед сравнением
-    return normalizeDash(expected) === normalizeDash(actual)
+    // Полная нормализация перед сравнением
+    return normalizeChar(expected) === normalizeChar(actual)
   }
 
   for (let i = 0; i < userInput.length; i++) {
@@ -80,7 +109,7 @@ export function isCharCorrect(
   if (index >= target.length || index >= userInput.length) {
     return false
   }
-  return normalizeDash(target[index]) === normalizeDash(userInput[index])
+  return normalizeChar(target[index]) === normalizeChar(userInput[index])
 }
 
 /**
@@ -98,7 +127,7 @@ export function getCharStatuses(
       statuses.push('skipped')
     } else if (i < userInput.length) {
       statuses.push(
-        normalizeDash(target[i]) === normalizeDash(userInput[i]) ? 'correct' : 'incorrect'
+        normalizeChar(target[i]) === normalizeChar(userInput[i]) ? 'correct' : 'incorrect'
       )
     } else if (i === userInput.length) {
       statuses.push('current')

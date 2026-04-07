@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useCallback, useState } from 'react'
 import { useShallow } from 'zustand/shallow'
 import { useAppStore } from '../../store/appStore'
-import { processTyping, getCharStatuses, findWordBoundary, findNextWordEnd, findLineEnd } from '../../core/typing/typingEngine'
+import { processTyping, getCharStatuses, findWordBoundary, findNextWordEnd, findLineEnd, normalizeChar } from '../../core/typing/typingEngine'
 import { calculateStats, calculateLiveStats, TypingStats } from '../../core/typing/statsEngine'
 import { CharSpan } from './CharSpan'
 import './Trainer.css'
@@ -76,12 +76,9 @@ export function Trainer({
   const backspaceIsCtrlRef = useRef(false)
   const userInputRef = useRef(userInput)
 
-  // Нормализация дефисов для отображения — все виды тире → обычный дефис
-  const normalizeDash = (char: string): string => {
-    if (char === '–' || char === '—' || char === '−' || char === '‐' || char === '‑' || char === '‒') {
-      return '-'
-    }
-    return char
+  // Нормализация символов для отображения — Unicode → ASCII
+  const normalizeDisplay = (char: string): string => {
+    return normalizeChar(char)
   }
 
   // Синхронизируем ref с актуальным userInput
@@ -106,7 +103,7 @@ export function Trainer({
 
   // Нормализованный текст для отображения (все тире → обычный дефис)
   const displayText = useMemo(
-    () => targetText.split('').map(normalizeDash).join(''),
+    () => targetText.split('').map(normalizeDisplay).join(''),
     [targetText]
   )
 

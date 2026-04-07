@@ -60,10 +60,6 @@ function FileTreeItem({ node, selectedPath, onSelect, expandedPaths, onToggle }:
         aria-expanded={isDirectory ? isExpanded : undefined}
         aria-selected={isSelected}
       >
-        <span className="file-tree-indent">
-          {/* Indentation guides */}
-        </span>
-
         {isDirectory && (
           <span className={`file-tree-chevron ${isExpanded ? 'expanded' : ''}`}>
             ▶
