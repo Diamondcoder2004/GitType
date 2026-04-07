@@ -112,6 +112,7 @@ function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [leftSidebarWidth, setLeftSidebarWidth] = useState(260)
   const [rightSidebarWidth, setRightSidebarWidth] = useState(200)
+  const [isResizing, setIsResizing] = useState(false)
   const isResizingRef = useRef(false)
 
   // Авто-разворачиваем sidebar когда есть файлы
@@ -138,19 +139,22 @@ function App() {
       if (target === 'left') {
         const newWidth = Math.max(180, Math.min(600, e.clientX))
         setLeftSidebarWidth(newWidth)
-        localStorage.setItem('gittype_left_sidebar_width', String(newWidth))
       } else if (target === 'right') {
         const vw = window.innerWidth
         const newWidth = Math.max(160, Math.min(400, vw - e.clientX))
         setRightSidebarWidth(newWidth)
-        localStorage.setItem('gittype_right_sidebar_width', String(newWidth))
       }
     }
 
     const handleMouseUp = () => {
+      if (!isResizingRef.current) return
       isResizingRef.current = false
+      setIsResizing(false)
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
+      // Сохраняем после завершения
+      localStorage.setItem('gittype_left_sidebar_width', String(leftSidebarWidth))
+      localStorage.setItem('gittype_right_sidebar_width', String(rightSidebarWidth))
     }
 
     window.addEventListener('mousemove', handleMouseMove)
@@ -159,7 +163,7 @@ function App() {
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [])
+  }, [leftSidebarWidth, rightSidebarWidth])
 
   // Инициализация токена
   useEffect(() => {
@@ -329,6 +333,7 @@ function App() {
               data-resize-target="left"
               onMouseDown={() => {
                 isResizingRef.current = true
+                setIsResizing(true)
                 document.body.style.cursor = 'col-resize'
                 document.body.style.userSelect = 'none'
               }}
@@ -397,6 +402,7 @@ function App() {
             data-resize-target="right"
             onMouseDown={() => {
               isResizingRef.current = true
+              setIsResizing(true)
               document.body.style.cursor = 'col-resize'
               document.body.style.userSelect = 'none'
             }}
@@ -438,6 +444,9 @@ function App() {
       </div>
 
       {/* ===== FOOTER REMOVED — hints moved to Trainer ===== */}
+
+      {/* ===== RESIZE OVERLAY ===== */}
+      {isResizing && <div className="resize-overlay" />}
 
       {/* ===== SETTINGS MODAL ===== */}
       {settingsOpen && (

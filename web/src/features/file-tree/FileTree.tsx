@@ -1,57 +1,98 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { TreeNode } from '../../core/repository/treeBuilder'
 import './FileTree.css'
 
-interface FileTreeItemProps {
-  node: TreeNode
-  level: number
-  selectedPath: string | null
-  onSelect: (path: string) => void
+// Маппинг расширений → иконки
+const FILE_ICONS: Record<string, string> = {
+  ts: '🔷', tsx: '⚛️', js: '📜', jsx: '⚛️',
+  py: '🐍', go: '🐹', rs: '🦀', java: '☕',
+  cpp: '⚙️', c: '⚙️', cs: '🟣', php: '🐘',
+  rb: '💎', swift: '🍎', kt: '🟠',
+  html: '🌐', css: '🎨', scss: '🎨', sass: '🎨',
+  json: '📋', xml: '📋', yaml: '📋', yml: '📋',
+  md: '📝', sh: '🖥️', bash: '🖥️',
+  dockerfile: '🐳', sql: '🗃️', vue: '💚',
 }
 
-function FileTreeItem({ node, level, selectedPath, onSelect }: FileTreeItemProps) {
-  const [isExpanded, setIsExpanded] = useState(true)
-  const isSelected = selectedPath === node.path
-  const paddingLeft = level * 16 + 8
+function getFileIcon(name: string): string {
+  const ext = name.split('.').pop()?.toLowerCase() || ''
+  const lowerName = name.toLowerCase()
+  if (lowerName === 'dockerfile') return FILE_ICONS.dockerfile
+  return FILE_ICONS[ext] || '📄'
+}
 
-  const handleClick = () => {
-    if (node.type === 'directory') {
-      setIsExpanded(!isExpanded)
+interface FileTreeItemProps {
+  node: TreeNode
+  selectedPath: string | null
+  onSelect: (path: string) => void
+  expandedPaths: Set<string>
+  onToggle: (path: string) => void
+}
+
+function FileTreeItem({ node, selectedPath, onSelect, expandedPaths, onToggle }: FileTreeItemProps) {
+  const isExpanded = expandedPaths.has(node.path)
+  const isSelected = selectedPath === node.path
+  const isDirectory = node.type === 'directory'
+
+  const handleClick = useCallback(() => {
+    if (isDirectory) {
+      onToggle(node.path)
     } else {
       onSelect(node.path)
     }
-  }
+  }, [isDirectory, node.path, onToggle, onSelect])
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      handleClick()
+    }
+  }, [handleClick])
 
   return (
     <div className="file-tree-node">
       <div
-        className={`file-tree-item ${node.type} ${isSelected ? 'selected' : ''}`}
-        style={{ paddingLeft }}
+        className={`file-tree-item ${isDirectory ? 'directory' : 'file'} ${isSelected ? 'selected' : ''}`}
         onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        tabIndex={0}
+        role="treeitem"
+        aria-expanded={isDirectory ? isExpanded : undefined}
+        aria-selected={isSelected}
       >
-        <span className="icon">
-          {node.type === 'directory' ? (
-            isExpanded ? (
-              '📂'
-            ) : (
-              '📁'
-            )
-          ) : (
-            '📄'
-          )}
+        <span className="file-tree-indent">
+          {/* Indentation guides */}
         </span>
-        <span className="name">{node.name}</span>
+
+        {isDirectory && (
+          <span className={`file-tree-chevron ${isExpanded ? 'expanded' : ''}`}>
+            ▶
+          </span>
+        )}
+        {!isDirectory && <span className="file-tree-chevron-placeholder" />}
+
+        <span className="file-tree-icon">
+          {isDirectory
+            ? (isExpanded ? '📂' : '📁')
+            : getFileIcon(node.name)
+          }
+        </span>
+
+        <span className="file-tree-name" title={node.name}>
+          {node.name}
+        </span>
       </div>
 
-      {node.type === 'directory' && isExpanded && node.children && (
-        <div className="file-tree-children">
+      {isDirectory && isExpanded && node.children && node.children.length > 0 && (
+        <div className="file-tree-children" role="group">
           {node.children.map((child) => (
             <FileTreeItem
               key={child.path}
               node={child}
-              level={level + 1}
               selectedPath={selectedPath}
               onSelect={onSelect}
+              expandedPaths={expandedPaths}
+              onToggle={onToggle}
             />
           ))}
         </div>
@@ -67,23 +108,88 @@ interface FileTreeProps {
 }
 
 export function FileTree({ tree, selectedPath, onSelect }: FileTreeProps) {
+  // Состояние раскрытых папок — вынесено на уровень дерева
+  const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => {
+    // По умолчанию раскрываем корневые директории
+    const initial = new Set<string>()
+    const addRootDirs = (nodes: TreeNode[]) => {
+      for (const node of nodes) {
+        if (node.type === 'directory') {
+          initial.add(node.path)
+          if (node.children) addRootDirs(node.children)
+        }
+      }
+    }
+    addRootDirs(tree)
+    return initial
+  })
+
+  const handleToggle = useCallback((path: string) => {
+    setExpandedPaths(prev => {
+      const next = new Set(prev)
+      if (next.has(path)) {
+        next.delete(path)
+      } else {
+        next.add(path)
+      }
+      return next
+    })
+  }, [])
+
+  // Collapse all / Expand all
+  const handleCollapseAll = useCallback(() => {
+    setExpandedPaths(new Set())
+  }, [])
+
+  const handleExpandAll = useCallback(() => {
+    const all = new Set<string>()
+    const collect = (nodes: TreeNode[]) => {
+      for (const node of nodes) {
+        if (node.type === 'directory') {
+          all.add(node.path)
+          if (node.children) collect(node.children)
+        }
+      }
+    }
+    collect(tree)
+    setExpandedPaths(all)
+  }, [tree])
+
   if (tree.length === 0) {
     return (
       <div className="file-tree-empty">
-        Введите репозиторий и нажмите ↻
+        <span className="empty-icon">📂</span>
+        <p>Выберите репозиторий</p>
       </div>
     )
   }
 
   return (
-    <div className="file-tree">
+    <div className="file-tree" role="tree">
+      <div className="file-tree-actions">
+        <button
+          className="file-tree-action-btn"
+          onClick={handleExpandAll}
+          title="Развернуть все"
+        >
+          ⌄
+        </button>
+        <button
+          className="file-tree-action-btn"
+          onClick={handleCollapseAll}
+          title="Свернуть все"
+        >
+          ⌃
+        </button>
+      </div>
       {tree.map((node) => (
         <FileTreeItem
           key={node.path}
           node={node}
-          level={0}
           selectedPath={selectedPath}
           onSelect={onSelect}
+          expandedPaths={expandedPaths}
+          onToggle={handleToggle}
         />
       ))}
     </div>

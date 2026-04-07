@@ -377,19 +377,45 @@ body {
   transition: background 0.15s;
 }
 
-.resize-handle:hover {
-  background: var(--main-color);
-  opacity: 0.3;
+.resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 40px;
+  background: transparent;
+  border-radius: 1px;
+  transition: background 0.15s, height 0.15s;
 }
 
-.resize-handle:active {
+.resize-handle:hover::after {
   background: var(--main-color);
-  opacity: 0.5;
+  height: 60px;
+  opacity: 0.4;
+}
+
+.resize-handle:active::after {
+  background: var(--main-color);
+  height: 100%;
+  opacity: 0.6;
 }
 
 .resize-handle-left {
   right: auto;
   left: -3px;
+}
+
+/* Resize overlay */
+.resize-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  cursor: col-resize;
 }
 
 .right-sidebar-header {
