@@ -64,7 +64,49 @@
   opacity: 0.9;
 }
 
+.popular-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.popular-title {
+  font-size: 0.75rem;
+  color: var(--sub-color);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.popular-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.popular-btn {
+  background: transparent;
+  color: var(--text-color);
+  border: 1px solid var(--sub-color);
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.popular-btn:hover {
+  border-color: var(--main-color);
+  color: var(--main-color);
+}
+
 .selected-repo {
   font-size: 0.85rem;
   color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.repo-progress {
+  color: var(--sub-color);
+  font-size: 0.75rem;
 }
