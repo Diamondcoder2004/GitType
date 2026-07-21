@@ -183,6 +183,15 @@ body {
   width: 0;
 }
 
+.left-sidebar.collapsed .sidebar-tabs {
+  display: none;
+}
+
+.left-sidebar.collapsed .sidebar-header {
+  justify-content: center;
+  padding: 0.5rem 0;
+}
+
 .sidebar-toggle {
   background: transparent;
   border: 1px solid var(--sub-color);
@@ -218,6 +227,25 @@ body {
   justify-content: center;
   font-size: 1.2rem;
   opacity: 0.5;
+}
+
+.sidebar-error {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.sidebar-error-icon {
+  font-size: 1.5rem;
+}
+
+.sidebar-error-text {
+  font-size: 0.8rem;
+  color: var(--error-color, #e74c3c);
+  line-height: 1.4;
 }
 
 /* ===== MAIN CONTENT ===== */

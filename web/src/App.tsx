@@ -257,6 +257,7 @@ function App() {
     return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS
   })
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [fileTreeError, setFileTreeError] = useState<string | null>(null)
 
   // prefers-color-scheme: автоопределение темы
   useEffect(() => {
@@ -383,13 +384,20 @@ function App() {
   // Загрузка дерева файлов
   useEffect(() => {
     if (!selectedRepo || !token) return
+    setFileTreeError(null)
     const loadFileTree = async () => {
       try {
         const paths = await githubClient.getRepoTree(selectedRepo.owner, selectedRepo.repo, token)
         const tree = buildFileTree(paths)
         setFileTree(tree)
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Error loading file tree:', error)
+        const msg = error instanceof Error ? error.message : String(error)
+        if (msg.includes('Bad credentials')) {
+          setFileTreeError('Невалидный токен. Обновите токен GitHub в настройках.')
+        } else {
+          setFileTreeError(`Ошибка загрузки: ${msg}`)
+        }
       }
     }
     loadFileTree()
@@ -588,7 +596,12 @@ function App() {
               </div>
             ) : (
               <div className="sidebar-content">
-                {treeMode === 'tree' ? (
+                {fileTreeError ? (
+                  <div className="sidebar-error">
+                    <span className="sidebar-error-icon">⚠️</span>
+                    <span className="sidebar-error-text">{fileTreeError}</span>
+                  </div>
+                ) : treeMode === 'tree' ? (
                   <FileTree
                     tree={filteredTree}
                     selectedPath={selectedFile}
