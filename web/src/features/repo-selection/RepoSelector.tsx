@@ -159,12 +159,13 @@ export function RepoSelector() {
  * Большой RepoSelector для welcome-экрана
  */
 export function RepoSelectorLarge() {
-  const { token, setToken, selectedRepo, setSelectedRepo } = useAppStore(
+  const { token, setToken, selectedRepo, setSelectedRepo, setView } = useAppStore(
     useShallow((state) => ({
       token: state.token,
       setToken: state.setToken,
       selectedRepo: state.selectedRepo,
       setSelectedRepo: state.setSelectedRepo,
+      setView: state.setView,
     }))
   )
   const [repoInput, setRepoInput] = useState('')
@@ -328,6 +329,35 @@ export function RepoSelectorLarge() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Переключатель на книги */}
+      <div className="repo-books-toggle" style={{ marginTop: '1rem' }}>
+        <button
+          className="books-nav-btn"
+          onClick={() => setView('book-select')}
+          style={{
+            background: 'none',
+            border: '1px solid rgba(100,102,105,0.4)',
+            color: 'var(--sub-color, #646669)',
+            padding: '0.5rem 1.2rem',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '0.85rem',
+            fontFamily: 'var(--font-mono, monospace)',
+            transition: 'all 0.15s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'var(--main-color, #e2b714)'
+            e.currentTarget.style.color = 'var(--main-color, #e2b714)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'rgba(100,102,105,0.4)'
+            e.currentTarget.style.color = 'var(--sub-color, #646669)'
+          }}
+        >
+          📖 Книги
+        </button>
       </div>
 
       {selectedRepo && (

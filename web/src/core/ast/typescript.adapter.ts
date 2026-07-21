@@ -19,75 +19,79 @@ class TypeScriptAdapter implements LanguageAdapter {
     const blocks: CodeBlock[] = []
     const lines = code.split('\n')
 
-    // Паттерны для извлечения функций и классов (с флагом g!)
-    const functionPattern = /^(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\([^)]*\)\s*(?::\s*\w+(?:<[^>]+>)?)?\s*\{/gm
-    const classPattern = /^(?:export\s+)?(?:abstract\s+)?class\s+(\w+)/gm
-    const arrowFunctionPattern = /^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\([^)]*\)\s*(?::\s*\w+(?:<[^>]+>)?)?\s*=>/gm
+    // Обновленные паттерны с поддержкой отступов (^\s*) и export default
+    const functionPattern = /^\s*(?:export\s+(?:default\s+)?)?(?:async\s+)?function\s+(\w+)\s*\(/gm
+    const classPattern = /^\s*(?:export\s+(?:default\s+)?)?(?:abstract\s+)?class\s+(\w+)/gm
+    const arrowFunctionPattern = /^\s*(?:export\s+(?:default\s+)?)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?(?:<[^>]*>\s*)?\([^)]*\)\s*(?::\s*[^=]+)?\s*=>/gm
+    // Паттерн для методов класса или объекта (исключая if, for, while, catch, switch)
+    const methodPattern = /^\s*(?:public\s+|private\s+|protected\s+)?(?:static\s+)?(?:async\s+)?(?:get\s+|set\s+)?(?!(?:if|for|while|catch|switch)\b)(\w+)\s*(?:<[^>]+>)?\s*\([^)]*\)\s*(?::\s*[^{=]+)?\s*\{/gm
 
     let idCounter = 0
 
-    // Поиск функций
-    for (const match of code.matchAll(functionPattern)) {
-      const name = match[1]
-      const startIndex = match.index!
-      const startLine = code.substring(0, startIndex).split('\n').length
+    // Вспомогательная функция для добавления блоков
+    const addBlocks = (matches: IterableIterator<RegExpMatchArray>, type: string) => {
+      for (const match of matches) {
+        const name = match[1]
+        if (!name) continue
+        
+        const startIndex = match.index!
+        // Считаем строки до начала совпадения
+        const startLine = code.substring(0, startIndex).split('\n').length
 
-      const { endIndex, endLine } = this.findBlockEnd(lines, startLine)
-      const blockCode = code.substring(startIndex, endIndex)
+        // Ищем конец блока
+        const { endIndex, endLine } = this.findBlockEnd(lines, startLine)
+        
+        // Если блок не найден корректно, пропускаем
+        if (endIndex <= startIndex) continue
 
-      if (this.isValidBlock(blockCode, startLine, endLine)) {
-        blocks.push({
-          id: `fn-${idCounter++}`,
-          type: 'function',
-          name,
-          code: blockCode,
-          startLine,
-          endLine,
-          complexity: this.calculateComplexity(blockCode),
-        })
+        const blockCode = code.substring(startIndex, endIndex)
+
+        if (this.isValidBlock(blockCode, startLine, endLine)) {
+          blocks.push({
+            id: `${type}-${idCounter++}`,
+            type: type as 'function' | 'class' | 'method' | 'interface' | 'type',
+            name,
+            code: blockCode,
+            startLine,
+            endLine,
+            complexity: this.calculateComplexity(blockCode),
+          })
+        }
       }
     }
 
-    // Поиск классов
-    for (const match of code.matchAll(classPattern)) {
-      const name = match[1]
-      const startIndex = match.index!
-      const startLine = code.substring(0, startIndex).split('\n').length
+    addBlocks(code.matchAll(functionPattern), 'function')
+    addBlocks(code.matchAll(classPattern), 'class')
+    addBlocks(code.matchAll(methodPattern), 'method')
 
-      const { endIndex, endLine } = this.findBlockEnd(lines, startLine)
-      const blockCode = code.substring(startIndex, endIndex)
-
-      if (this.isValidBlock(blockCode, startLine, endLine)) {
-        blocks.push({
-          id: `class-${idCounter++}`,
-          type: 'class',
-          name,
-          code: blockCode,
-          startLine,
-          endLine,
-          complexity: this.calculateComplexity(blockCode),
-        })
-      }
-    }
-
-    // Поиск стрелочных функций
+    // Поиск стрелочных функций (немного другая логика, так как могут быть без {})
     for (const match of code.matchAll(arrowFunctionPattern)) {
       const name = match[1]
       const startIndex = match.index!
       const startLine = code.substring(0, startIndex).split('\n').length
 
-      // Для стрелочных функций ищем конец по фигурным скобкам или точке с запятой
       let endIndex = startIndex
       let endLine = startLine
 
-      if (code.substring(startIndex).includes('{')) {
-        const { endIndex: foundEndIndex, endLine: foundEndLine } =
-          this.findBlockEnd(lines, startLine)
+      // Проверяем, есть ли блок с фигурными скобками
+      // Ищем '=>' и проверяем первый непустой символ после него
+      const afterMatch = code.substring(startIndex + match[0].length)
+      const isBlockBody = afterMatch.trim().startsWith('{')
+
+      if (isBlockBody) {
+        const { endIndex: foundEndIndex, endLine: foundEndLine } = this.findBlockEnd(lines, startLine)
         endIndex = foundEndIndex
         endLine = foundEndLine
       } else {
         // Однострочная стрелочная функция
-        endIndex = startIndex + code.substring(startIndex).indexOf(';') + 1
+        const semicolonIndex = code.substring(startIndex).indexOf(';')
+        if (semicolonIndex !== -1) {
+          endIndex = startIndex + semicolonIndex + 1
+        } else {
+          // Ищем конец строки, если нет точки с запятой
+          const nlIndex = code.substring(startIndex).indexOf('\n')
+          endIndex = nlIndex !== -1 ? startIndex + nlIndex : code.length
+        }
         endLine = startLine
       }
 
@@ -106,7 +110,36 @@ class TypeScriptAdapter implements LanguageAdapter {
       }
     }
 
-    return blocks
+    // Дедупликация: если один блок совпадает по startLine с другим, оставляем более специфичный
+    const seen = new Map<number, CodeBlock>()
+    for (const block of blocks) {
+      const existing = seen.get(block.startLine)
+      if (!existing) {
+        seen.set(block.startLine, block)
+      } else {
+        // method > function > class (более специфичный тип выигрывает)
+        const priority: Record<string, number> = { method: 3, function: 2, class: 1 }
+        if ((priority[block.type] || 0) > (priority[existing.type] || 0)) {
+          seen.set(block.startLine, block)
+        }
+      }
+    }
+    const uniqueBlocks = Array.from(seen.values())
+
+    // Привязка методов к родительским классам
+    const classBlocks = uniqueBlocks.filter(b => b.type === 'class')
+    for (const block of uniqueBlocks) {
+      if (block.type === 'method' || (block.type === 'function' && block.id.startsWith('arrow-'))) {
+        for (const cls of classBlocks) {
+          if (block.startLine > cls.startLine && block.endLine <= cls.endLine) {
+            block.parentId = cls.id
+            break
+          }
+        }
+      }
+    }
+
+    return uniqueBlocks
   }
 
   private findBlockEnd(

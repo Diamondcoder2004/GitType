@@ -1,0 +1,401 @@
+/* ===== CodeMap Modal ===== */
+.codemap-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: codemap-fade 0.2s ease-out;
+}
+
+@keyframes codemap-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.codemap-modal {
+  background: var(--bg-color);
+  border-radius: 16px;
+  max-width: 960px;
+  width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+  animation: codemap-slide 0.3s ease-out;
+  border: 1px solid rgba(100, 102, 105, 0.3);
+}
+
+@keyframes codemap-slide {
+  from { opacity: 0; transform: translateY(30px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.codemap-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid rgba(100, 102, 105, 0.3);
+}
+
+.codemap-header h2 {
+  color: var(--main-color);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.codemap-close {
+  background: transparent;
+  border: none;
+  color: var(--sub-color);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.codemap-close:hover {
+  background: rgba(100, 102, 105, 0.3);
+  color: var(--text-color);
+}
+
+/* ===== Overview Cards ===== */
+.codemap-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid rgba(100, 102, 105, 0.15);
+}
+
+.overview-card {
+  background: rgba(100, 102, 105, 0.12);
+  border-radius: 12px;
+  padding: 1rem;
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+.overview-card:hover {
+  transform: translateY(-2px);
+}
+
+.overview-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--main-color);
+  font-family: var(--font-mono);
+  line-height: 1.1;
+}
+
+.overview-label {
+  color: var(--sub-color);
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ===== Progress Bar (Overall) ===== */
+.codemap-progress-section {
+  padding: 0 2rem 1.5rem;
+}
+
+.codemap-progress-bar {
+  height: 8px;
+  background: rgba(100, 102, 105, 0.25);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 0.75rem;
+}
+
+.codemap-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--main-color), #4ade80);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.codemap-progress-text {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--sub-color);
+  font-size: 0.8rem;
+  margin-top: 0.4rem;
+}
+
+/* ===== Directory Sections ===== */
+.codemap-content {
+  padding: 0 2rem 2rem;
+}
+
+.dir-section {
+  margin-bottom: 1.5rem;
+}
+
+.dir-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.2s;
+}
+
+.dir-header:hover {
+  opacity: 0.8;
+}
+
+.dir-toggle {
+  color: var(--sub-color);
+  font-size: 0.8rem;
+  transition: transform 0.2s;
+  width: 16px;
+  text-align: center;
+}
+
+.dir-toggle.expanded {
+  transform: rotate(90deg);
+}
+
+.dir-name {
+  color: var(--text-color);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.dir-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+
+.dir-completion {
+  color: var(--sub-color);
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+}
+
+.dir-mini-bar {
+  width: 60px;
+  height: 4px;
+  background: rgba(100, 102, 105, 0.3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.dir-mini-fill {
+  height: 100%;
+  background: var(--main-color);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+/* ===== File Grid ===== */
+.file-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.6rem;
+  padding-left: 1.5rem;
+  animation: grid-appear 0.3s ease;
+}
+
+@keyframes grid-appear {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.file-card {
+  background: rgba(100, 102, 105, 0.1);
+  border: 1px solid rgba(100, 102, 105, 0.2);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.file-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: transparent;
+  transition: background 0.2s;
+}
+
+.file-card:hover {
+  border-color: var(--main-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.file-card.completed::before {
+  background: var(--main-color);
+}
+
+.file-card.stars-3::before {
+  background: linear-gradient(90deg, #f59e0b, #4ade80);
+}
+
+.file-card.active {
+  border-color: var(--main-color);
+  background: rgba(226, 183, 20, 0.08);
+}
+
+.file-card-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.file-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.file-card-name {
+  font-size: 0.82rem;
+  color: var(--text-color);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.file-card.not-started .file-card-name {
+  color: var(--sub-color);
+}
+
+.file-stars {
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  line-height: 1;
+}
+
+.file-stars .star-filled {
+  color: #f59e0b;
+}
+
+.file-stars .star-empty {
+  color: rgba(100, 102, 105, 0.4);
+}
+
+.file-card-stats {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.file-stat {
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--sub-color);
+  background: rgba(100, 102, 105, 0.2);
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+}
+
+.file-stat.wpm {
+  color: var(--main-color);
+}
+
+.file-sessions {
+  font-size: 0.65rem;
+  color: var(--sub-color);
+  margin-left: auto;
+}
+
+/* ===== Empty state ===== */
+.codemap-empty {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--sub-color);
+}
+
+.codemap-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.codemap-empty h3 {
+  color: var(--text-color);
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.codemap-empty p {
+  font-size: 0.9rem;
+}
+
+/* ===== Stars Legend ===== */
+.codemap-legend {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 1rem 2rem;
+  border-top: 1px solid rgba(100, 102, 105, 0.15);
+  color: var(--sub-color);
+  font-size: 0.75rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.legend-stars {
+  color: #f59e0b;
+  letter-spacing: 1px;
+}
+
+/* ===== Scrollbar ===== */
+.codemap-modal::-webkit-scrollbar {
+  width: 10px;
+}
+
+.codemap-modal::-webkit-scrollbar-track {
+  background: rgba(50, 52, 55, 0.5);
+  border-radius: 5px;
+}
+
+.codemap-modal::-webkit-scrollbar-thumb {
+  background: var(--sub-color);
+  border-radius: 5px;
+}
+
+.codemap-modal::-webkit-scrollbar-thumb:hover {
+  background: var(--main-color);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 640px) {
+  .codemap-modal {
+    width: 98%;
+  }
+  .codemap-overview {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .file-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+}

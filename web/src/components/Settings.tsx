@@ -10,13 +10,18 @@ export interface AppSettings {
   indentationGuides: boolean
   showMinimap: boolean
   highlightNextChar: boolean
+  strictMode: boolean
+  highlightCurrentLine: boolean
   githubToken: string
   // Cursor customization
   caretStyle: 'block' | 'line' | 'underline' | 'block-outline'
   caretColor: string
   // Text style
   textStyle: 'normal' | 'bright' | 'muted'
+  // Auto theme
+  autoTheme: boolean
 }
+
 
 const THEMES = [
   { name: 'Серая (Default)', id: 'default', colors: { bg: '#323437', main: '#e2b714', text: '#d1d0c5' } },
@@ -63,7 +68,7 @@ export function Settings({ settings, onSettingsChange, onClose }: SettingsProps)
     const theme = THEMES.find(t => t.id === themeId)
     if (!theme) return
 
-    const newSettings = { ...localSettings, theme: themeId }
+    const newSettings = { ...localSettings, theme: themeId, autoTheme: false }
     setLocalSettings(newSettings)
     applyTheme(theme.colors)
     onSettingsChange(newSettings)
@@ -218,6 +223,23 @@ export function Settings({ settings, onSettingsChange, onClose }: SettingsProps)
           {/* Темы */}
           <section className="settings-section">
             <h3>🎨 Тема оформления</h3>
+            <label className="toggle-label" style={{ marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input
+                type="checkbox"
+                checked={localSettings.autoTheme}
+                onChange={() => {
+                  const newSettings = { ...localSettings, autoTheme: !localSettings.autoTheme }
+                  setLocalSettings(newSettings)
+                  onSettingsChange(newSettings)
+                  localStorage.setItem('gittype_settings', JSON.stringify(newSettings))
+                }}
+                className="toggle-checkbox"
+              />
+              <span className={`toggle-switch ${localSettings.autoTheme ? 'on' : 'off'}`}>
+                <span className="toggle-knob" />
+              </span>
+              <span className="toggle-text">Авто (системная тема)</span>
+            </label>
             <div className="theme-grid">
               {THEMES.map(theme => (
                 <button
@@ -298,6 +320,40 @@ export function Settings({ settings, onSettingsChange, onClose }: SettingsProps)
               <label className="toggle-label">
                 <input
                   type="checkbox"
+                  checked={localSettings.strictMode}
+                  onChange={() => {
+                    const newSettings = { ...localSettings, strictMode: !localSettings.strictMode }
+                    setLocalSettings(newSettings)
+                    onSettingsChange(newSettings)
+                    localStorage.setItem('gittype_settings', JSON.stringify(newSettings))
+                  }}
+                  className="toggle-checkbox"
+                />
+                <span className={`toggle-switch ${localSettings.strictMode ? 'on' : 'off'}`}>
+                  <span className="toggle-knob" />
+                </span>
+                <span className="toggle-text">Строгий режим (блок при ошибке)</span>
+              </label>
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
+                  checked={localSettings.highlightCurrentLine}
+                  onChange={() => {
+                    const newSettings = { ...localSettings, highlightCurrentLine: !localSettings.highlightCurrentLine }
+                    setLocalSettings(newSettings)
+                    onSettingsChange(newSettings)
+                    localStorage.setItem('gittype_settings', JSON.stringify(newSettings))
+                  }}
+                  className="toggle-checkbox"
+                />
+                <span className={`toggle-switch ${localSettings.highlightCurrentLine ? 'on' : 'off'}`}>
+                  <span className="toggle-knob" />
+                </span>
+                <span className="toggle-text">Выделять текущую строку</span>
+              </label>
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
                   checked={localSettings.bracketPairColorization}
                   onChange={() => {
                     const newSettings = { ...localSettings, bracketPairColorization: !localSettings.bracketPairColorization }
@@ -328,6 +384,23 @@ export function Settings({ settings, onSettingsChange, onClose }: SettingsProps)
                   <span className="toggle-knob" />
                 </span>
                 <span className="toggle-text">Линии отступов</span>
+              </label>
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
+                  checked={localSettings.showMinimap}
+                  onChange={() => {
+                    const newSettings = { ...localSettings, showMinimap: !localSettings.showMinimap }
+                    setLocalSettings(newSettings)
+                    onSettingsChange(newSettings)
+                    localStorage.setItem('gittype_settings', JSON.stringify(newSettings))
+                  }}
+                  className="toggle-checkbox"
+                />
+                <span className={`toggle-switch ${localSettings.showMinimap ? 'on' : 'off'}`}>
+                  <span className="toggle-knob" />
+                </span>
+                <span className="toggle-text">Отображать Minimap</span>
               </label>
               <label className="toggle-label">
                 <input
@@ -424,10 +497,13 @@ export function Settings({ settings, onSettingsChange, onClose }: SettingsProps)
                     indentationGuides: false,
                     showMinimap: false,
                     highlightNextChar: false,
+                    strictMode: false,
+                    highlightCurrentLine: true,
                     githubToken: '',
                     caretStyle: 'block',
                     caretColor: 'theme',
                     textStyle: 'normal',
+                    autoTheme: false,
                   }
                   setLocalSettings(defaultSettings)
                   onSettingsChange(defaultSettings)

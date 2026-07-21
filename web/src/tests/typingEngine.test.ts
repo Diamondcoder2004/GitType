@@ -30,7 +30,8 @@ describe('processTyping', () => {
   it('должен считать ошибки при лишнем вводе', () => {
     const result = processTyping('hi', 'hello')
 
-    expect(result.errors).toBe(3) // l, l, o - лишние
+    // h==h (ok), i!=e (ошибка), запасные l,l,o (3 ошибки) = 4
+    expect(result.errors).toBe(4)
   })
 
   it('должен возвращать 100% точности для пустого ввода', () => {
@@ -96,11 +97,12 @@ describe('getCharStatuses', () => {
   it('должен помечать неправильные символы', () => {
     const statuses = getCharStatuses('hello', 'hxloo')
     
+    // h==h, e!=x, l==l, l!=o, o==o
     expect(statuses).toEqual([
       'correct',
       'incorrect',
       'correct',
-      'correct',
+      'incorrect',
       'correct',
     ])
   })

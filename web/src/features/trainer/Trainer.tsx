@@ -9,6 +9,7 @@ import './Trainer.css'
 interface TrainerProps {
   fontSize?: number
   onNextBlock?: () => void
+  onPrevBlock?: () => void
   onRestart?: () => void
   bracketPairColorization?: boolean
   indentationGuides?: boolean
@@ -16,11 +17,16 @@ interface TrainerProps {
   caretStyle?: 'block' | 'line' | 'underline' | 'block-outline'
   caretColor?: string
   textStyle?: 'normal' | 'bright' | 'muted'
+  strictMode?: boolean
+  highlightCurrentLine?: boolean
+  soundEnabled?: boolean
+  showMinimap?: boolean
 }
 
 export function Trainer({
   fontSize = 16,
   onNextBlock,
+  onPrevBlock,
   onRestart,
   bracketPairColorization = false,
   indentationGuides = false,
@@ -28,9 +34,14 @@ export function Trainer({
   caretStyle = 'block',
   caretColor = 'theme',
   textStyle = 'normal',
+  strictMode = false,
+  highlightCurrentLine = true,
+  soundEnabled = false,
+  showMinimap = false,
 }: TrainerProps) {
   const {
     mode,
+    selectedFile,
     selectedBlock,
     fileContent,
     userInput,
@@ -46,9 +57,12 @@ export function Trainer({
     setMode,
     setSkippedPositions,
     resetTrainer,
+    addCompletedFile,
+    addCompletedBlock,
   } = useAppStore(
     useShallow((state) => ({
       mode: state.mode,
+      selectedFile: state.selectedFile,
       selectedBlock: state.selectedBlock,
       fileContent: state.fileContent,
       userInput: state.userInput,
@@ -64,6 +78,8 @@ export function Trainer({
       setMode: state.setMode,
       setSkippedPositions: state.setSkippedPositions,
       resetTrainer: state.resetTrainer,
+      addCompletedFile: state.addCompletedFile,
+      addCompletedBlock: state.addCompletedBlock,
     }))
   )
 
@@ -75,6 +91,49 @@ export function Trainer({
   const backspaceHoldIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const backspaceIsCtrlRef = useRef(false)
   const userInputRef = useRef(userInput)
+  const skippedPositionsRef = useRef(skippedPositions)
+
+  useEffect(() => {
+    skippedPositionsRef.current = skippedPositions
+  }, [skippedPositions])
+
+  const audioContextRef = useRef<AudioContext | null>(null)
+
+  const playSound = useCallback((type: 'click' | 'error') => {
+    if (!soundEnabled) return
+    try {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
+      }
+      const ctx = audioContextRef.current
+      if (ctx.state === 'suspended') ctx.resume()
+      
+      const osc = ctx.createOscillator()
+      const gainNode = ctx.createGain()
+      
+      osc.connect(gainNode)
+      gainNode.connect(ctx.destination)
+      
+      if (type === 'click') {
+        osc.type = 'square'
+        osc.frequency.setValueAtTime(150, ctx.currentTime)
+        osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.05)
+        gainNode.gain.setValueAtTime(0.05, ctx.currentTime)
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05)
+        osc.start(ctx.currentTime)
+        osc.stop(ctx.currentTime + 0.05)
+      } else {
+        osc.type = 'sawtooth'
+        osc.frequency.setValueAtTime(300, ctx.currentTime)
+        gainNode.gain.setValueAtTime(0.1, ctx.currentTime)
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15)
+        osc.start(ctx.currentTime)
+        osc.stop(ctx.currentTime + 0.15)
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }, [soundEnabled])
 
   // Нормализация символов для отображения — Unicode → ASCII
   const normalizeDisplay = (char: string): string => {
@@ -131,6 +190,17 @@ export function Trainer({
     const interval = setInterval(update, 500)
     return () => clearInterval(interval)
   }, [startTime, userInput, targetText, isComplete])
+
+  // Сохранение прогресса
+  useEffect(() => {
+    if (isComplete && stats && stats.accuracy >= 80) {
+      if (mode === 'full-file' && selectedFile) {
+        addCompletedFile(selectedFile)
+      } else if (mode === 'code-block' && selectedBlock) {
+        addCompletedBlock(selectedBlock.id)
+      }
+    }
+  }, [isComplete, stats, mode, selectedFile, selectedBlock, addCompletedFile, addCompletedBlock])
 
   // Smooth caret scroll
   useEffect(() => {
@@ -231,6 +301,50 @@ export function Trainer({
     setTimeout(() => typingAreaRef.current?.focus({ preventScroll: true }), 50)
   }, [resetTypingState, onNextBlock])
 
+  const handleSkipWord = useCallback(() => {
+    if (isComplete) return
+    const currentPos = userInput.length
+    const skipTo = findNextWordEnd(targetText, currentPos)
+    if (skipTo > currentPos) {
+      const newSkipped = new Set(skippedPositions || [])
+      for (let i = currentPos; i < skipTo; i++) newSkipped.add(i)
+      setSkippedPositions(newSkipped)
+      const newValue = targetText.slice(0, skipTo)
+      setUserInput(newValue)
+      if (!startTime) setStartTime(Date.now())
+      if (skipTo >= targetText.length) {
+        const endTime = Date.now()
+        setEndTime(endTime)
+        setIsComplete(true)
+        const result = processTyping(targetText, newValue)
+        setStats(calculateStats(startTime || endTime, endTime, newValue.length, result.correctChars, result.errors))
+      }
+    }
+    setTimeout(() => typingAreaRef.current?.focus({ preventScroll: true }), 0)
+  }, [isComplete, userInput.length, targetText, skippedPositions, startTime, setSkippedPositions, setUserInput, setStartTime, setEndTime, setIsComplete, setStats])
+
+  const handleSkipLine = useCallback(() => {
+    if (isComplete) return
+    const currentPos = userInput.length
+    const skipTo = findLineEnd(targetText, currentPos)
+    if (skipTo > currentPos) {
+      const newSkipped = new Set(skippedPositions || [])
+      for (let i = currentPos; i < skipTo; i++) newSkipped.add(i)
+      setSkippedPositions(newSkipped)
+      const newValue = targetText.slice(0, skipTo)
+      setUserInput(newValue)
+      if (!startTime) setStartTime(Date.now())
+      if (skipTo >= targetText.length) {
+        const endTime = Date.now()
+        setEndTime(endTime)
+        setIsComplete(true)
+        const result = processTyping(targetText, newValue)
+        setStats(calculateStats(startTime || endTime, endTime, newValue.length, result.correctChars, result.errors))
+      }
+    }
+    setTimeout(() => typingAreaRef.current?.focus({ preventScroll: true }), 0)
+  }, [isComplete, userInput.length, targetText, skippedPositions, startTime, setSkippedPositions, setUserInput, setStartTime, setEndTime, setIsComplete, setStats])
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (!targetText) return
 
@@ -253,63 +367,29 @@ export function Trainer({
       return
     }
 
+    // Навигация по блокам (Alt + Up/Down)
+    if (e.key === 'ArrowUp' && e.altKey) {
+      e.preventDefault()
+      if (mode === 'code-block' && onPrevBlock) onPrevBlock()
+      return
+    }
+    if (e.key === 'ArrowDown' && e.altKey) {
+      e.preventDefault()
+      if (mode === 'code-block' && onNextBlock) onNextBlock()
+      return
+    }
+
     // Ctrl+Enter — пропуск строки
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
       e.preventDefault()
-      if (isComplete) return
-      const currentPos = userInput.length
-      const skipTo = findLineEnd(targetText, currentPos)
-      if (skipTo > currentPos) {
-        // Отслеживаем пропущенные позиции
-        const newSkipped = new Set(skippedPositions || [])
-        for (let i = currentPos; i < skipTo; i++) {
-          newSkipped.add(i)
-        }
-        setSkippedPositions(newSkipped)
-
-        const newValue = targetText.slice(0, skipTo)
-        setUserInput(newValue)
-        if (!startTime) setStartTime(Date.now())
-        // Если пропустили до конца — завершаем
-        if (skipTo >= targetText.length) {
-          const endTime = Date.now()
-          setEndTime(endTime)
-          setIsComplete(true)
-          const result = processTyping(targetText, newValue)
-          const finalStats = calculateStats(startTime || endTime, endTime, newValue.length, result.correctChars, result.errors)
-          setStats(finalStats)
-        }
-      }
+      handleSkipLine()
       return
     }
 
     // Ctrl+Shift+Enter — пропуск слова
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.shiftKey) {
       e.preventDefault()
-      if (isComplete) return
-      const currentPos = userInput.length
-      const skipTo = findNextWordEnd(targetText, currentPos)
-      if (skipTo > currentPos) {
-        // Отслеживаем пропущенные позиции
-        const newSkipped = new Set(skippedPositions || [])
-        for (let i = currentPos; i < skipTo; i++) {
-          newSkipped.add(i)
-        }
-        setSkippedPositions(newSkipped)
-
-        const newValue = targetText.slice(0, skipTo)
-        setUserInput(newValue)
-        if (!startTime) setStartTime(Date.now())
-        // Если пропустили до конца — завершаем
-        if (skipTo >= targetText.length) {
-          const endTime = Date.now()
-          setEndTime(endTime)
-          setIsComplete(true)
-          const result = processTyping(targetText, newValue)
-          const finalStats = calculateStats(startTime || endTime, endTime, newValue.length, result.correctChars, result.errors)
-          setStats(finalStats)
-        }
-      }
+      handleSkipWord()
       return
     }
 
@@ -322,11 +402,27 @@ export function Trainer({
       const doBackspace = () => {
         const current = userInputRef.current
         if (current.length > 0) {
+          let newLength = current.length - 1
           if (backspaceIsCtrlRef.current) {
-            const wordStart = findWordBoundary(current, current.length)
-            setUserInput(current.slice(0, wordStart))
-          } else {
-            setUserInput(current.slice(0, -1))
+            newLength = findWordBoundary(current, current.length)
+          }
+
+          setUserInput(current.slice(0, newLength))
+
+          // Отменяем "скип" (пропуск), если удаляем пропущенные символы
+          const prevSkipped = skippedPositionsRef.current
+          if (prevSkipped && prevSkipped.size > 0) {
+            const nextSkipped = new Set(prevSkipped)
+            let changed = false
+            for (let i = current.length - 1; i >= newLength; i--) {
+              if (nextSkipped.has(i)) {
+                nextSkipped.delete(i)
+                changed = true
+              }
+            }
+            if (changed) {
+              setSkippedPositions(nextSkipped.size > 0 ? nextSkipped : null)
+            }
           }
         }
       }
@@ -348,7 +444,22 @@ export function Trainer({
       if (isComplete) return
 
       const nextChar = e.key === 'Enter' ? '\n' : e.key
+      const expectedChar = normalizeDisplay(targetText[userInput.length] || '')
+      const isCorrect = normalizeDisplay(nextChar) === expectedChar
+
+      if (!isCorrect) {
+        playSound('error')
+        if (strictMode) {
+          // В строгом режиме не позволяем вводить ошибку, только играем звук
+          return
+        }
+      } else {
+        playSound('click')
+      }
+
       const newValue = userInput + nextChar
+      const remainingText = targetText.slice(newValue.length)
+      const isOnlyWhitespaceLeft = remainingText.trim() === ''
 
       if (newValue.length > targetText.length) return
 
@@ -358,16 +469,27 @@ export function Trainer({
         setStartTime(Date.now())
       }
 
-      if (newValue.length === targetText.length) {
+      if (newValue.length === targetText.length || (isOnlyWhitespaceLeft && remainingText.length > 0)) {
+        // Если остался только whitespace, добиваем до конца автоматически
+        if (isOnlyWhitespaceLeft && remainingText.length > 0) {
+          const newSkipped = new Set(skippedPositionsRef.current || [])
+          for (let i = newValue.length; i < targetText.length; i++) {
+            newSkipped.add(i)
+          }
+          setSkippedPositions(newSkipped)
+          setUserInput(targetText)
+        }
+
         const endTime = Date.now()
         setEndTime(endTime)
         setIsComplete(true)
 
-        const result = processTyping(targetText, newValue)
+        const finalInput = isOnlyWhitespaceLeft ? targetText : newValue
+        const result = processTyping(targetText, finalInput)
         const finalStats = calculateStats(
           startTime || endTime,
           endTime,
-          newValue.length,
+          targetText.length,
           result.correctChars,
           result.errors
         )
@@ -452,8 +574,11 @@ export function Trainer({
       )
     }
 
+    const isCurrentLine = userInput.length >= globalStartIndex && userInput.length <= globalStartIndex + lineText.length
+    const lineClass = `code-line ${highlightCurrentLine && isCurrentLine ? 'current-line' : ''}`
+
     return (
-      <div key={lineIndex} className="code-line">
+      <div key={lineIndex} className={lineClass}>
         <span className="line-number">{lineIndex + 1}</span>
         <span className="line-content" data-indent-level={hasIndent ? Math.floor(indentLevel / 2) : undefined}>
           {chars}
@@ -477,9 +602,18 @@ export function Trainer({
           )}
         </div>
         <div className="trainer-controls">
+          <button onClick={handleSkipWord} className="mode-btn skip-btn" title="Пропустить слово (Ctrl+Shift+Enter)" disabled={isComplete}>
+            Пропустить слово
+          </button>
           <button onClick={handleModeToggle} className="mode-btn" title="Переключить режим">
             {mode === 'full-file' ? 'Блок' : 'Файл'}
           </button>
+          {mode === 'code-block' && (
+            <>
+              <button onClick={onPrevBlock} className="mode-btn" title="Предыдущий блок (Alt+Up)">↑ Пред.</button>
+              <button onClick={onNextBlock} className="mode-btn" title="Следующий блок (Alt+Down)">След. ↓</button>
+            </>
+          )}
         </div>
       </div>
 
@@ -516,29 +650,48 @@ export function Trainer({
         <div className="progress-fill" style={{ width: `${progress}%` }} />
       </div>
 
-      {/* Typing area */}
-      <div
-        ref={typingAreaRef}
-        className={`typing-area ${isFocused ? 'focused' : ''} ${isComplete ? 'completed' : ''}`}
-        onClick={handleContainerClick}
-        onKeyDown={handleKeyDown}
-        onKeyUp={handleKeyUp}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        tabIndex={0}
-        data-caret-style={caretStyle}
-        data-text-style={textStyle}
-      >
-        <div className="code-display" style={{ fontSize: `${fontSize}px`, lineHeight: 1.55 }}>
-          {displayText && (() => {
-            let globalOffset = 0
-            return textLines.map((line, lineIndex) => {
-              const lineStartIndex = globalOffset
-              globalOffset += line.length + 1 // +1 для \n
-              return renderLine(line, lineIndex, lineStartIndex)
-            })
-          })()}
+      <div style={{ display: 'flex', flex: 1, minHeight: 0, position: 'relative' }}>
+        {/* Typing area */}
+        <div
+          ref={typingAreaRef}
+          className={`typing-area ${isFocused ? 'focused' : ''} ${isComplete ? 'completed' : ''}`}
+          onClick={handleContainerClick}
+          onKeyDown={handleKeyDown}
+          onKeyUp={handleKeyUp}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          tabIndex={0}
+          data-caret-style={caretStyle}
+          data-text-style={textStyle}
+        >
+          <div className="code-display" style={{ fontSize: `${fontSize}px`, lineHeight: 1.55 }}>
+            {displayText && (() => {
+              let globalOffset = 0
+              return textLines.map((line, lineIndex) => {
+                const lineStartIndex = globalOffset
+                globalOffset += line.length + 1 // +1 для \n
+                return renderLine(line, lineIndex, lineStartIndex)
+              })
+            })()}
+          </div>
         </div>
+        
+        {/* Minimap */}
+        {showMinimap && (
+          <div className="minimap-container" aria-hidden="true">
+            <div className="minimap-content" style={{ fontSize: `${Math.max(2, fontSize * 0.2)}px`, lineHeight: 1.55 }}>
+              {displayText && (() => {
+                let globalOffset = 0
+                return textLines.map((line, lineIndex) => {
+                  const lineStartIndex = globalOffset
+                  globalOffset += line.length + 1
+                  return renderLine(line, lineIndex, lineStartIndex)
+                })
+              })()}
+            </div>
+            {/* Viewport overlay could go here */}
+          </div>
+        )}
       </div>
 
       {/* Completion actions */}
@@ -568,7 +721,7 @@ export function Trainer({
         <span className="hint-sep">·</span>
         <span className="hint-key">Ctrl+↵</span> пропуск строки
         <span className="hint-sep">·</span>
-        <span className="hint-key">Ctrl+⇧+↵</span> пропуск слова
+        <span className="hint-key" title="Пропуск слова">Ctrl+⇧+↵</span> пропуск слова
         <span className="hint-sep">·</span>
         <span className="hint-key">ESC</span> сброс
       </div>

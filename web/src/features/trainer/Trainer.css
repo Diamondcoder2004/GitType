@@ -193,6 +193,15 @@
   background: rgba(255, 255, 255, 0.02);
 }
 
+.code-line.current-line {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.code-line.current-line .line-number {
+  color: var(--main-color);
+  opacity: 0.8;
+}
+
 .line-number {
   display: inline-block;
   width: 3.5em;
@@ -506,4 +515,60 @@
 
 .typing-area::-webkit-scrollbar-thumb:hover {
   background: var(--main-color);
+}
+
+/* ===== MINIMAP ===== */
+.minimap-container {
+  width: 120px;
+  background: rgba(0, 0, 0, 0.2);
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.minimap-content {
+  font-family: var(--font-mono);
+  white-space: pre;
+  color: rgba(255, 255, 255, 0.3);
+  transform-origin: top left;
+  user-select: none;
+  pointer-events: none;
+  padding: 0.5rem;
+}
+
+.minimap-content .caret {
+  display: none !important;
+}
+
+.minimap-content .char.correct {
+  color: var(--main-color);
+  opacity: 0.8;
+}
+
+.minimap-content .char.incorrect {
+  color: #ff4444;
+}
+
+/* ===== SKIP BUTTON ===== */
+.skip-btn {
+  background: rgba(226, 183, 20, 0.1) !important;
+  border-color: rgba(226, 183, 20, 0.3) !important;
+  color: var(--main-color) !important;
+}
+
+.skip-btn:hover {
+  background: var(--main-color) !important;
+  color: var(--bg-color) !important;
+}
+
+.skip-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Glassmorphism details */
+.trainer-header, .stats-bar, .complete-bar, .hint-bar {
+  backdrop-filter: blur(10px);
+  background: rgba(10, 10, 10, 0.4);
 }

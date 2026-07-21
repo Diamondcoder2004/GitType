@@ -42,7 +42,7 @@ describe('calculateAverageStats', () => {
 
     expect(avg.cpm).toBe(110)
     expect(avg.wpm).toBe(22)
-    expect(avg.accuracy).toBe(92) // среднее между 95 и 90
+    expect(avg.accuracy).toBe(93) // (95 + 90) / 2 = 92.5 → Math.round = 93
   })
 
   it('должен возвращать нули для пустого массива', () => {

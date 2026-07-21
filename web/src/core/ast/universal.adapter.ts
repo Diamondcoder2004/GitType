@@ -22,10 +22,10 @@ const universalAdapter: LanguageAdapter = {
     return code
   },
 
-  extractBlocks(code: string, originalCode: string): CodeBlock[] {
+  extractBlocks(code: string, originalCode: string, filePath?: string): CodeBlock[] {
     const blocks: CodeBlock[] = []
     const lines = originalCode.split('\n')
-    const ext = originalCode.split('.').pop()?.toLowerCase() || ''
+    const ext = (filePath || originalCode).split('.').pop()?.toLowerCase() || ''
 
     // HTML-подобие: извлекаем по тегам/секциям
     if (['html', 'htm', 'xml', 'svg'].includes(ext)) {
@@ -250,7 +250,7 @@ function extractByIndentation(code: string): CodeBlock[] {
         blocks.push(createUniversalBlock(currentBlock, blockIndex++))
       }
       currentBlock = {
-        name: trimmed.substring(0, 40),
+        name: trimmed.replace(/\s*\{$/, '').substring(0, 40),
         lines: [line],
         startLine: i,
         indent: 0,
@@ -259,7 +259,7 @@ function extractByIndentation(code: string): CodeBlock[] {
       currentBlock.lines.push(line)
     } else {
       currentBlock = {
-        name: trimmed.substring(0, 40),
+        name: trimmed.replace(/\s*\{$/, '').substring(0, 40),
         lines: [line],
         startLine: i,
         indent,

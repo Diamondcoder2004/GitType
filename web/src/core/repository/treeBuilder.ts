@@ -20,29 +20,7 @@ export function buildFileTree(paths: string[]): TreeNode[] {
     const parts = path.split('/')
     const name = parts[parts.length - 1]
 
-    // Создаём узел для текущего пути
-    const node: TreeNode = {
-      name,
-      path,
-      type: 'file',
-    }
-
-    nodeMap.set(path, node)
-
-    // Находим родителя
-    const parentPath = parts.slice(0, -1).join('/')
-    const parent = parentPath ? nodeMap.get(parentPath) : null
-
-    if (parent) {
-      if (!parent.children) {
-        parent.children = []
-      }
-      parent.children.push(node)
-    } else {
-      root.push(node)
-    }
-
-    // Создаём промежуточные директории
+    // Сначала создаём все нужные директории по пути
     let currentPath = ''
     for (let i = 0; i < parts.length - 1; i++) {
       const dirName = parts[i]
@@ -65,6 +43,28 @@ export function buildFileTree(paths: string[]): TreeNode[] {
           root.push(dirNode)
         }
       }
+    }
+
+    // Создаём узел для самого файла
+    const node: TreeNode = {
+      name,
+      path,
+      type: 'file',
+    }
+
+    nodeMap.set(path, node)
+
+    // Находим родителя (теперь он точно есть, если это не файл в корне)
+    const parentPath = parts.slice(0, -1).join('/')
+    const parent = parentPath ? nodeMap.get(parentPath) : null
+
+    if (parent) {
+      if (!parent.children) {
+        parent.children = []
+      }
+      parent.children.push(node)
+    } else {
+      root.push(node)
     }
   }
 
@@ -158,4 +158,66 @@ export function flattenTree(tree: TreeNode[]): TreeNode[] {
 
   traverse(tree)
   return result
+}
+
+/**
+ * Строит "Путь обучения" (эвристический порядок файлов для изучения)
+ */
+export function buildLearningPath(tree: TreeNode[]): TreeNode[] {
+  const allFiles = flattenTree(tree)
+  
+  // Правила оценки (меньше = раньше)
+  const getScore = (name: string, path: string) => {
+    const lPath = path.toLowerCase()
+    const lName = name.toLowerCase()
+    
+    // 1. Configs and Env
+    if (lName === 'package.json') return 10
+    if (lName === 'docker-compose.yml' || lName === 'dockerfile') return 11
+    if (lName.includes('config')) return 12
+    if (lName === '.env.example' || lName === '.env') return 13
+    
+    // 2. Entry points
+    if (lName === 'index.html') return 20
+    if (lName === 'main.ts' || lName === 'main.js' || lName === 'main.py') return 21
+    if (lName === 'index.ts' || lName === 'index.js') return 22
+    if (lName === 'app.tsx' || lName === 'app.vue' || lName === 'app.ts') return 23
+    
+    // 3. Core/Store/Router/Architecture
+    if (lPath.includes('/store/') || lPath.includes('/state/')) return 30
+    if (lPath.includes('/router/') || lPath.includes('/routes/')) return 31
+    if (lPath.includes('/core/')) return 32
+    
+    // 4. API/Services
+    if (lPath.includes('/api/') || lPath.includes('/services/')) return 40
+    
+    // 5. Types/Interfaces
+    if (lPath.includes('/types/') || lPath.includes('/interfaces/')) return 50
+    if (lName.endsWith('.d.ts')) return 51
+    
+    // 6. Features/Components
+    if (lPath.includes('/features/')) return 60
+    if (lPath.includes('/components/')) return 61
+    if (lPath.includes('/views/') || lPath.includes('/pages/')) return 62
+    
+    // 7. Utils/Helpers
+    if (lPath.includes('/utils/') || lPath.includes('/helpers/')) return 70
+    
+    // 8. Tests
+    if (lPath.includes('/tests/') || lName.includes('.test.') || lName.includes('.spec.')) return 90
+    
+    // 9. Docs
+    if (lName.endsWith('.md')) return 100
+    if (lName === 'gitignore') return 101
+    
+    // Default
+    return 80
+  }
+  
+  return allFiles.sort((a, b) => {
+    const scoreA = getScore(a.name, a.path)
+    const scoreB = getScore(b.name, b.path)
+    if (scoreA !== scoreB) return scoreA - scoreB
+    return a.path.localeCompare(b.path)
+  })
 }

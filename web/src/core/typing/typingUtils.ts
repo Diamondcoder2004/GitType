@@ -30,7 +30,8 @@ export function calculateConsistency(userInput: string, targetText: string): num
     for (let j = 0; j < windowSize; j++) {
       if (window[j] === target[j]) matches++
     }
-    if (matches >= 8) consistent++
+    // Все 10 символов окна должны совпадать для консистентности
+    if (matches === windowSize) consistent++
   }
   
   return Math.round((consistent / (userInput.length - windowSize + 1)) * 100)

@@ -4,7 +4,12 @@ import { CodeBlock } from '../core/ast/languageAdapter'
 import { TypingStats } from '..//core/typing/statsEngine'
 
 export type TrainerMode = 'full-file' | 'code-block'
-export type AppView = 'repo-select' | 'trainer'
+export type AppView = 'repo-select' | 'book-select' | 'trainer'
+
+interface ProgressState {
+  completedFiles: string[]
+  completedBlocks: string[]
+}
 
 interface RepoState {
   token: string
@@ -15,6 +20,7 @@ interface RepoState {
   codeBlocks: CodeBlock[]
   selectedBlock: CodeBlock | null
   languageFilter: string
+  progress: ProgressState
 }
 
 interface TrainerState {
@@ -38,6 +44,9 @@ interface Actions {
   setCodeBlocks: (blocks: CodeBlock[]) => void
   setSelectedBlock: (block: CodeBlock | null) => void
   setLanguageFilter: (lang: string) => void
+  addCompletedFile: (path: string) => void
+  addCompletedBlock: (id: string) => void
+  loadProgress: (owner: string, repo: string) => void
 
   // Trainer actions
   setMode: (mode: TrainerMode) => void
@@ -60,6 +69,10 @@ const initialRepoState: RepoState = {
   codeBlocks: [],
   selectedBlock: null,
   languageFilter: 'all',
+  progress: {
+    completedFiles: [],
+    completedBlocks: [],
+  },
 }
 
 const initialTrainerState: TrainerState = {
@@ -95,6 +108,41 @@ export const useAppStore = create<RepoState & TrainerState & Actions>()((set) =>
   setSelectedBlock: (block) => set({ selectedBlock: block }),
 
   setLanguageFilter: (lang) => set({ languageFilter: lang }),
+
+  addCompletedFile: (path) => set((state) => {
+    if (!state.selectedRepo) return state
+    if (state.progress.completedFiles.includes(path)) return state
+    const newProgress = {
+      ...state.progress,
+      completedFiles: [...state.progress.completedFiles, path]
+    }
+    const key = `gittype_progress_${state.selectedRepo.owner}_${state.selectedRepo.repo}`
+    localStorage.setItem(key, JSON.stringify(newProgress))
+    return { progress: newProgress }
+  }),
+
+  addCompletedBlock: (id) => set((state) => {
+    if (!state.selectedRepo) return state
+    if (state.progress.completedBlocks.includes(id)) return state
+    const newProgress = {
+      ...state.progress,
+      completedBlocks: [...state.progress.completedBlocks, id]
+    }
+    const key = `gittype_progress_${state.selectedRepo.owner}_${state.selectedRepo.repo}`
+    localStorage.setItem(key, JSON.stringify(newProgress))
+    return { progress: newProgress }
+  }),
+
+  loadProgress: (owner, repo) => set(() => {
+    const key = `gittype_progress_${owner}_${repo}`
+    const data = localStorage.getItem(key)
+    if (data) {
+      try {
+        return { progress: JSON.parse(data) }
+      } catch (e) { }
+    }
+    return { progress: { completedFiles: [], completedBlocks: [] } }
+  }),
 
   // Trainer actions
   setMode: (mode) => set({ mode }),

@@ -28,9 +28,8 @@ class PythonAdapter implements LanguageAdapter {
 
     // Поиск функций
     for (const match of code.matchAll(functionPattern)) {
-      // Пропускаем методы внутри классов (они имеют отступ)
       const indent = match[1]
-      if (indent.length > 0) continue
+      const isMethod = indent.length > 0
 
       const name = match[2]
       const startIndex = match.index!
@@ -42,7 +41,7 @@ class PythonAdapter implements LanguageAdapter {
       if (this.isValidBlock(blockCode, startLine, endLine)) {
         blocks.push({
           id: `fn-${idCounter++}`,
-          type: 'function',
+          type: isMethod ? 'method' : 'function',
           name,
           code: blockCode,
           startLine,
@@ -55,7 +54,7 @@ class PythonAdapter implements LanguageAdapter {
     // Поиск async функций
     for (const match of code.matchAll(asyncFunctionPattern)) {
       const indent = match[1]
-      if (indent.length > 0) continue
+      const isMethod = indent.length > 0
 
       const name = match[2]
       const startIndex = match.index!
@@ -67,7 +66,7 @@ class PythonAdapter implements LanguageAdapter {
       if (this.isValidBlock(blockCode, startLine, endLine)) {
         blocks.push({
           id: `async-fn-${idCounter++}`,
-          type: 'function',
+          type: isMethod ? 'method' : 'function',
           name,
           code: blockCode,
           startLine,
@@ -99,6 +98,19 @@ class PythonAdapter implements LanguageAdapter {
           endLine,
           complexity: this.calculateComplexity(blockCode),
         })
+      }
+    }
+
+    // Привязка методов к родительским классам
+    const classBlocks = blocks.filter(b => b.type === 'class')
+    for (const block of blocks) {
+      if (block.type === 'method') {
+        for (const cls of classBlocks) {
+          if (block.startLine > cls.startLine && block.endLine <= cls.endLine) {
+            block.parentId = cls.id
+            break
+          }
+        }
       }
     }
 

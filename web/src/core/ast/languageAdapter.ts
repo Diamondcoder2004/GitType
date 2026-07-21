@@ -11,6 +11,8 @@ export interface CodeBlock {
   complexity: number
   signature?: string
   body?: string
+  /** ID родительского блока (например, класс для метода) */
+  parentId?: string
 }
 
 /**
@@ -30,7 +32,7 @@ export interface LanguageAdapter {
   /**
    * Извлекает семантические блоки из AST
    */
-  extractBlocks(ast: unknown, code: string): CodeBlock[]
+  extractBlocks(ast: unknown, code: string, filePath?: string): CodeBlock[]
 
   /**
    * Извлекает сигнатуру из блока (например, объявление функции)

@@ -14,7 +14,7 @@ const FILE_ICONS: Record<string, string> = {
   dockerfile: '🐳', sql: '🗃️', vue: '💚',
 }
 
-function getFileIcon(name: string): string {
+export function getFileIcon(name: string): string {
   const ext = name.split('.').pop()?.toLowerCase() || ''
   const lowerName = name.toLowerCase()
   if (lowerName === 'dockerfile') return FILE_ICONS.dockerfile
@@ -27,9 +27,10 @@ interface FileTreeItemProps {
   onSelect: (path: string) => void
   expandedPaths: Set<string>
   onToggle: (path: string) => void
+  completedFiles: string[]
 }
 
-function FileTreeItem({ node, selectedPath, onSelect, expandedPaths, onToggle }: FileTreeItemProps) {
+function FileTreeItem({ node, selectedPath, onSelect, expandedPaths, onToggle, completedFiles }: FileTreeItemProps) {
   const isExpanded = expandedPaths.has(node.path)
   const isSelected = selectedPath === node.path
   const isDirectory = node.type === 'directory'
@@ -77,6 +78,10 @@ function FileTreeItem({ node, selectedPath, onSelect, expandedPaths, onToggle }:
         <span className="file-tree-name" title={node.name}>
           {node.name}
         </span>
+
+        {!isDirectory && completedFiles.includes(node.path) && (
+          <span className="file-tree-completed" title="Изучено">✅</span>
+        )}
       </div>
 
       {isDirectory && isExpanded && node.children && node.children.length > 0 && (
@@ -89,6 +94,7 @@ function FileTreeItem({ node, selectedPath, onSelect, expandedPaths, onToggle }:
               onSelect={onSelect}
               expandedPaths={expandedPaths}
               onToggle={onToggle}
+              completedFiles={completedFiles}
             />
           ))}
         </div>
@@ -101,9 +107,10 @@ interface FileTreeProps {
   tree: TreeNode[]
   selectedPath: string | null
   onSelect: (path: string) => void
+  completedFiles: string[]
 }
 
-export function FileTree({ tree, selectedPath, onSelect }: FileTreeProps) {
+export function FileTree({ tree, selectedPath, onSelect, completedFiles }: FileTreeProps) {
   // Состояние раскрытых папок — вынесено на уровень дерева
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => {
     // По умолчанию раскрываем корневые директории
@@ -186,6 +193,7 @@ export function FileTree({ tree, selectedPath, onSelect }: FileTreeProps) {
           onSelect={onSelect}
           expandedPaths={expandedPaths}
           onToggle={handleToggle}
+          completedFiles={completedFiles}
         />
       ))}
     </div>
