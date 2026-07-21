@@ -14,6 +14,7 @@ import { BookTree } from './features/books/BookTree'
 import { History } from './features/history/History'
 import { CodeMap } from './features/codemap/CodeMap'
 import { addSession } from './core/history/historyEngine'
+import { addRecentRepo, getRecentRepos, removeRecentRepo, RecentRepo } from './core/repository/recentRepos'
 import './App.css'
 
 // Цвета тем для applyTheme (дубликат из Settings для доступа в App)
@@ -350,6 +351,40 @@ function App() {
     if (token) githubClient.initialize(token)
   }, [token])
 
+  // Recent repos
+  const [recentRepos, setRecentRepos] = useState<RecentRepo[]>(getRecentRepos())
+
+  // Save to recent when repo is selected
+  useEffect(() => {
+    if (selectedRepo) {
+      addRecentRepo(selectedRepo.owner, selectedRepo.repo)
+      setRecentRepos(getRecentRepos())
+    }
+  }, [selectedRepo?.owner, selectedRepo?.repo])
+
+  // Back to main menu
+  const handleBackToMenu = useCallback(() => {
+    useAppStore.setState({
+      view: 'repo-select',
+      selectedRepo: null,
+      fileTree: [],
+      selectedFile: null,
+      fileContent: null,
+      codeBlocks: [],
+      selectedBlock: null,
+    })
+    setFileTreeError(null)
+  }, [])
+
+  const handleRemoveRecent = useCallback((owner: string, repo: string) => {
+    removeRecentRepo(owner, repo)
+    setRecentRepos(getRecentRepos())
+  }, [])
+
+  const handleSelectRecent = useCallback((repo: RecentRepo) => {
+    useAppStore.getState().setSelectedRepo(repo.owner, repo.repo)
+  }, [])
+
   // Загрузка прогресса
   useEffect(() => {
     if (selectedRepo) {
@@ -501,10 +536,16 @@ function App() {
       {/* ===== HEADER ===== */}
       <header className="app-header">
         <div className="header-left">
-          <div className="logo">
-            <span className="logo-icon">⌨️</span>
-            <span className="logo-text">GitType</span>
-          </div>
+          {selectedRepo ? (
+            <button className="back-btn" onClick={handleBackToMenu} title="Назад к выбору репозитория">
+              ← Назад
+            </button>
+          ) : (
+            <div className="logo">
+              <span className="logo-icon">⌨️</span>
+              <span className="logo-text">GitType</span>
+            </div>
+          )}
         </div>
         <div className="header-center">
           {selectedRepo ? (
@@ -669,6 +710,32 @@ function App() {
                     <span className="step-text">Начните печатать!</span>
                   </div>
                 </div>
+                {recentRepos.length > 0 && (
+                  <div className="recent-repos">
+                    <h3>Недавние репозитории</h3>
+                    <div className="recent-repos-list">
+                      {recentRepos.map((r) => (
+                        <button
+                          key={`${r.owner}/${r.repo}`}
+                          className="recent-repo-item"
+                          onClick={() => handleSelectRecent(r)}
+                        >
+                          <span className="recent-repo-name">{r.owner}/{r.repo}</span>
+                          <button
+                            className="recent-repo-remove"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleRemoveRecent(r.owner, r.repo)
+                            }}
+                            title="Удалить"
+                          >
+                            ×
+                          </button>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

@@ -1,25 +1,7 @@
 import { useState, useCallback } from 'react'
 import { TreeNode } from '../../core/repository/treeBuilder'
+import { getFileIcon as getCatppuccinIcon, getFileIconColor } from '../../core/repository/fileIcons'
 import './FileTree.css'
-
-// Маппинг расширений → иконки
-const FILE_ICONS: Record<string, string> = {
-  ts: '🔷', tsx: '⚛️', js: '📜', jsx: '⚛️',
-  py: '🐍', go: '🐹', rs: '🦀', java: '☕',
-  cpp: '⚙️', c: '⚙️', cs: '🟣', php: '🐘',
-  rb: '💎', swift: '🍎', kt: '🟠',
-  html: '🌐', css: '🎨', scss: '🎨', sass: '🎨',
-  json: '📋', xml: '📋', yaml: '📋', yml: '📋',
-  md: '📝', sh: '🖥️', bash: '🖥️',
-  dockerfile: '🐳', sql: '🗃️', vue: '💚',
-}
-
-export function getFileIcon(name: string): string {
-  const ext = name.split('.').pop()?.toLowerCase() || ''
-  const lowerName = name.toLowerCase()
-  if (lowerName === 'dockerfile') return FILE_ICONS.dockerfile
-  return FILE_ICONS[ext] || '📄'
-}
 
 interface FileTreeItemProps {
   node: TreeNode
@@ -71,7 +53,15 @@ function FileTreeItem({ node, selectedPath, onSelect, expandedPaths, onToggle, c
         <span className="file-tree-icon">
           {isDirectory
             ? (isExpanded ? '📂' : '📁')
-            : getFileIcon(node.name)
+            : (
+              <span
+                className="file-icon-badge"
+                style={{ color: getFileIconColor(node.name), borderColor: getFileIconColor(node.name) + '44' }}
+                title={node.name}
+              >
+                {getCatppuccinIcon(node.name).icon}
+              </span>
+            )
           }
         </span>
 
