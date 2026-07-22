@@ -271,6 +271,23 @@
   flex-shrink: 0;
 }
 
+.file-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  min-width: 22px;
+  height: 16px;
+  padding: 0 3px;
+  border: 1px solid;
+  border-radius: 3px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
 .file-card-name {
   font-size: 0.82rem;
   color: var(--text-color);

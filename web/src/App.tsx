@@ -85,6 +85,17 @@ const CODE_LANGUAGES = [
   { id: 'dart', label: 'Dart' },
 ]
 
+const RECOMMENDED_REPOS = [
+  { name: 'karpathy/nanochat', stars: '⭐ 56k', desc: 'Python — чат на нейросетях' },
+  { name: 'karpathy/llm.c', stars: '⭐ 30k', desc: 'C/CUDA — обучение LLM с нуля' },
+  { name: 'microsoft/TypeScript', stars: '⭐ 102k', desc: 'TypeScript — язык программирования' },
+  { name: 'facebook/react', stars: '⭐ 134k', desc: 'JavaScript — UI библиотека' },
+  { name: 'denoland/deno', stars: '⭐ 100k', desc: 'TypeScript/JavaScript — рантайм' },
+  { name: 'tailwindlabs/tailwindcss', stars: '⭐ 86k', desc: 'CSS — утилитарный фреймворк' },
+  { name: 'vercel/next.js', stars: '⭐ 132k', desc: 'React — fullstack фреймворк' },
+  { name: 'sveltejs/svelte', stars: '⭐ 82k', desc: 'JavaScript — компилятор UI' },
+]
+
 const DEFAULT_SETTINGS: AppSettings = {
   theme: 'default',
   fontSize: 16,
@@ -736,6 +747,25 @@ function App() {
                     </div>
                   </div>
                 )}
+                <div className="recommended-repos">
+                  <h3>Популярные репозитории</h3>
+                  <div className="recommended-repos-list">
+                    {RECOMMENDED_REPOS.map((r) => (
+                      <button
+                        key={r.name}
+                        className="recommended-repo-item"
+                        onClick={() => {
+                          const [owner, repo] = r.name.split('/')
+                          useAppStore.getState().setSelectedRepo(owner, repo)
+                        }}
+                      >
+                        <span className="recommended-repo-stars">{r.stars}</span>
+                        <span className="recommended-repo-name">{r.name}</span>
+                        <span className="recommended-repo-desc">{r.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           )}

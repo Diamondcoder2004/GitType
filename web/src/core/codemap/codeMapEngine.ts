@@ -222,22 +222,24 @@ export function getMapOverview(directories: DirectoryProgress[]): MapOverview {
 }
 
 /**
- * Возвращает иконку по расширению файла
+ * Возвращает иконку по расширению файла (Catppuccin Mocha)
  */
 export function getFileIcon(extension: string): string {
   const icons: Record<string, string> = {
-    ts: '🟦', tsx: '⚛️', js: '🟨', jsx: '⚛️',
-    py: '🐍', go: '🔷', rs: '🦀', java: '☕',
-    cpp: '⚙️', c: '⚙️', cs: '💎', rb: '💎',
-    swift: '🍎', kt: '🟣', dart: '🎯',
-    html: '🌐', css: '🎨', scss: '🎨',
-    vue: '💚', svelte: '🧡',
-    json: '📋', yaml: '📋', yml: '📋', toml: '📋',
-    md: '📝', txt: '📄',
-    sh: '🐚', bash: '🐚',
-    sql: '🗃️', dockerfile: '🐳',
+    ts: 'TS', tsx: 'TX', js: 'JS', jsx: 'JX',
+    py: 'PY', go: 'GO', rs: 'RS', java: 'JV',
+    cpp: 'C+', c: 'C', cs: 'C#', rb: 'RB',
+    swift: 'SW', kt: 'KT', dart: 'DA',
+    html: 'HT', css: 'CS', scss: 'SC',
+    vue: 'VU', svelte: 'SV',
+    json: '{}', yaml: 'YM', yml: 'YM', toml: 'TM',
+    md: 'MD', txt: 'TX',
+    sh: 'SH', bash: 'SH',
+    sql: 'SQ', dockerfile: 'DK',
+    bat: 'BT', ps1: 'PS',
+    lock: 'LK', env: 'EN',
   }
-  return icons[extension] || '📄'
+  return icons[extension] || extension.slice(0, 2).toUpperCase() || '📄'
 }
 
 /**

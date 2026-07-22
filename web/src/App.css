@@ -993,3 +993,65 @@ body {
 .recent-repo-remove:hover {
   color: var(--error-color, #f38ba8);
 }
+
+/* ===== RECOMMENDED REPOS ===== */
+.recommended-repos {
+  margin-top: 1.5rem;
+  width: 100%;
+  max-width: 500px;
+}
+
+.recommended-repos h3 {
+  font-size: 0.85rem;
+  color: var(--sub-color);
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.recommended-repos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.recommended-repo-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 0.5rem 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--text-color);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.recommended-repo-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--main-color);
+}
+
+.recommended-repo-stars {
+  color: var(--main-color, #e2b714);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.recommended-repo-name {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.recommended-repo-desc {
+  color: var(--sub-color);
+  font-size: 0.75rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-left: auto;
+}

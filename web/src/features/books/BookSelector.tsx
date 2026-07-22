@@ -3,6 +3,7 @@ import { useAppStore } from '../../store/appStore'
 import { useBookStore } from '../../core/books/bookStore'
 import { TxtParser } from '../../core/books/parsers/txtParser'
 import { MarkdownParser } from '../../core/books/parsers/markdownParser'
+import { PdfParser } from '../../core/books/parsers/pdfParser'
 import { MAX_BOOK_FILE_SIZE } from '../../core/books/types'
 import type { BookParser, BookFormat } from '../../core/books/types'
 import './BookSelector.css'
@@ -13,9 +14,10 @@ const PARSERS: ParserMap = {
   txt: new TxtParser(),
   md: new MarkdownParser(),
   markdown: new MarkdownParser(),
+  pdf: new PdfParser(),
 }
 
-const ACCEPTED_EXTENSIONS = '.txt,.md,.markdown,.epub'
+const ACCEPTED_EXTENSIONS = '.txt,.md,.markdown,.epub,.pdf'
 
 /**
  * Определяет парсер по расширению файла
@@ -130,7 +132,7 @@ export function BookSelector() {
           style={{ display: 'none' }}
         />
         <p className="book-upload-hint">
-          Поддерживаются: TXT, Markdown (.md), EPUB
+          Поддерживаются: TXT, Markdown (.md), EPUB, PDF
         </p>
       </div>
 

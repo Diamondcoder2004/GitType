@@ -135,14 +135,14 @@ describe('codeMapEngine', () => {
 
   describe('getFileIcon', () => {
     it('возвращает иконку для известных расширений', () => {
-      expect(getFileIcon('ts')).toBe('🟦')
-      expect(getFileIcon('py')).toBe('🐍')
-      expect(getFileIcon('go')).toBe('🔷')
-      expect(getFileIcon('rs')).toBe('🦀')
+      expect(getFileIcon('ts')).toBe('TS')
+      expect(getFileIcon('py')).toBe('PY')
+      expect(getFileIcon('go')).toBe('GO')
+      expect(getFileIcon('rs')).toBe('RS')
     })
 
-    it('возвращает 📄 для неизвестных расширений', () => {
-      expect(getFileIcon('xyz')).toBe('📄')
+    it('возвращает первые 2 буквы для неизвестных расширений', () => {
+      expect(getFileIcon('xyz')).toBe('XY')
     })
   })
 

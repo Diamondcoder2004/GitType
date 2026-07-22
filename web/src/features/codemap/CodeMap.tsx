@@ -9,6 +9,7 @@ import {
   StarRating,
   DirectoryProgress,
 } from '../../core/codemap/codeMapEngine'
+import { getFileIconColor } from '../../core/repository/fileIcons'
 import './CodeMap.css'
 
 interface CodeMapProps {
@@ -246,7 +247,12 @@ function DirectorySection({
               }
             >
               <div className="file-card-top">
-                <span className="file-icon">{getFileIcon(file.extension)}</span>
+                <span
+                  className="file-icon-badge"
+                  style={{ color: getFileIconColor(file.fileName), borderColor: getFileIconColor(file.fileName) + '44' }}
+                >
+                  {getFileIcon(file.extension)}
+                </span>
                 <span className="file-card-name">{file.fileName}</span>
               </div>
 
