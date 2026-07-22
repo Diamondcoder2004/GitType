@@ -562,8 +562,10 @@ export function Settings({ settings, onSettingsChange, onClose }: SettingsProps)
                       if (e.ctrlKey || e.metaKey) parts.push('Ctrl')
                       if (e.altKey) parts.push('Alt')
                       if (e.shiftKey) parts.push('Shift')
-                      const keyName = e.key === ' ' ? 'Space' : e.key === 'Enter' ? 'Enter' : e.key === 'Backspace' ? 'Backspace' : e.key === 'Escape' ? 'Escape' : e.key
-                      if (!['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) {
+                      const keyName = e.key === ' ' ? 'Space' : e.key === 'Enter' ? 'Enter' : e.key === 'Backspace' ? 'Backspace' : e.key
+                      if (!['Control', 'Shift', 'Alt', 'Meta', 'Escape'].includes(e.key)) {
+                        // Require at least one modifier for non-special keys
+                        if (parts.length === 0 && !['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'].includes(keyName)) return
                         parts.push(keyName)
                         const combo = parts.join('+')
                         const newHotkeys = { ...localSettings.hotkeys, [key]: combo }

@@ -55,11 +55,28 @@ export function Trainer({
   // Helper: check if keyboard event matches a hotkey string like "Ctrl+Shift+Enter"
   const matchHotkey = useCallback((e: React.KeyboardEvent, combo: string): boolean => {
     const parts = combo.split('+').map(s => s.trim().toLowerCase())
-    const key = e.key.toLowerCase()
     const hasCtrl = e.ctrlKey || e.metaKey
     const hasShift = e.shiftKey
     const hasAlt = e.altKey
+
+    // Get the key name in a normalized form
+    const rawKey = e.key.toLowerCase()
+    const keyMap: Record<string, string> = {
+      'enter': 'enter',
+      'backspace': 'backspace',
+      'escape': 'escape',
+      'tab': 'tab',
+      ' ': 'space',
+      'arrowup': 'arrowup',
+      'arrowdown': 'arrowdown',
+      'arrowleft': 'arrowleft',
+      'arrowright': 'arrowright',
+    }
+    const key = keyMap[rawKey] || rawKey
+
     const keyPart = parts.find(p => !['ctrl', 'shift', 'alt', 'meta'].includes(p)) || ''
+
+    // For Ctrl combos on Mac, e.key might report differently — check both
     return (
       parts.includes('ctrl') === hasCtrl &&
       parts.includes('shift') === hasShift &&

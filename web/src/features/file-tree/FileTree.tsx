@@ -103,17 +103,13 @@ interface FileTreeProps {
 export function FileTree({ tree, selectedPath, onSelect, completedFiles }: FileTreeProps) {
   // Состояние раскрытых папок — вынесено на уровень дерева
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => {
-    // По умолчанию раскрываем корневые директории
+    // По умолчанию раскрываем только корневые директории (без рекурсии)
     const initial = new Set<string>()
-    const addRootDirs = (nodes: TreeNode[]) => {
-      for (const node of nodes) {
-        if (node.type === 'directory') {
-          initial.add(node.path)
-          if (node.children) addRootDirs(node.children)
-        }
+    for (const node of tree) {
+      if (node.type === 'directory') {
+        initial.add(node.path)
       }
     }
-    addRootDirs(tree)
     return initial
   })
 
