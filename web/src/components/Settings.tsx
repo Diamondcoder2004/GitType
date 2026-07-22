@@ -1,6 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import './Settings.css'
 
+export interface HotkeyConfig {
+  skipWord: string
+  skipLine: string
+  deleteWord: string
+  reset: string
+}
+
 export interface AppSettings {
   theme: string
   fontSize: number
@@ -20,6 +27,8 @@ export interface AppSettings {
   textStyle: 'normal' | 'bright' | 'muted'
   // Auto theme
   autoTheme: boolean
+  // Hotkeys
+  hotkeys: HotkeyConfig
 }
 
 
@@ -504,6 +513,12 @@ export function Settings({ settings, onSettingsChange, onClose }: SettingsProps)
                     caretColor: 'theme',
                     textStyle: 'normal',
                     autoTheme: false,
+                    hotkeys: {
+                      skipWord: 'Ctrl+Shift+Enter',
+                      skipLine: 'Ctrl+Enter',
+                      deleteWord: 'Ctrl+Backspace',
+                      reset: 'Escape',
+                    },
                   }
                   setLocalSettings(defaultSettings)
                   onSettingsChange(defaultSettings)
@@ -514,6 +529,55 @@ export function Settings({ settings, onSettingsChange, onClose }: SettingsProps)
               >
                 🔄 Сбросить
               </button>
+            </div>
+          </section>
+
+          {/* ===== HOTKEYS ===== */}
+          <section className="settings-section">
+            <h3>⌨️ Горячие клавиши</h3>
+            <div className="settings-group">
+              {([
+                ['skipWord', 'Пропустить слово'],
+                ['skipLine', 'Пропустить строку'],
+                ['deleteWord', 'Удалить слово'],
+                ['reset', 'Сброс'],
+              ] as const).map(([key, label]) => (
+                <div className="settings-row" key={key}>
+                  <label>{label}</label>
+                  <input
+                    type="text"
+                    value={localSettings.hotkeys[key]}
+                    onChange={(e) => {
+                      const newHotkeys = { ...localSettings.hotkeys, [key]: e.target.value }
+                      const newSettings = { ...localSettings, hotkeys: newHotkeys }
+                      setLocalSettings(newSettings)
+                      onSettingsChange(newSettings)
+                      localStorage.setItem('gittype_settings', JSON.stringify(newSettings))
+                    }}
+                    className="hotkey-input"
+                    readOnly
+                    onKeyDown={(e) => {
+                      e.preventDefault()
+                      const parts: string[] = []
+                      if (e.ctrlKey || e.metaKey) parts.push('Ctrl')
+                      if (e.altKey) parts.push('Alt')
+                      if (e.shiftKey) parts.push('Shift')
+                      const keyName = e.key === ' ' ? 'Space' : e.key === 'Enter' ? 'Enter' : e.key === 'Backspace' ? 'Backspace' : e.key === 'Escape' ? 'Escape' : e.key
+                      if (!['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) {
+                        parts.push(keyName)
+                        const combo = parts.join('+')
+                        const newHotkeys = { ...localSettings.hotkeys, [key]: combo }
+                        const newSettings = { ...localSettings, hotkeys: newHotkeys }
+                        setLocalSettings(newSettings)
+                        onSettingsChange(newSettings)
+                        localStorage.setItem('gittype_settings', JSON.stringify(newSettings))
+                      }
+                    }}
+                    placeholder="Нажмите комбинацию..."
+                  />
+                </div>
+              ))}
+              <p className="settings-hint">Нажмите на поле и введите новую комбинацию клавиш</p>
             </div>
           </section>
         </div>

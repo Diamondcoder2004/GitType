@@ -21,6 +21,12 @@ interface TrainerProps {
   highlightCurrentLine?: boolean
   soundEnabled?: boolean
   showMinimap?: boolean
+  hotkeys?: {
+    skipWord: string
+    skipLine: string
+    deleteWord: string
+    reset: string
+  }
 }
 
 export function Trainer({
@@ -38,7 +44,30 @@ export function Trainer({
   highlightCurrentLine = true,
   soundEnabled = false,
   showMinimap = false,
+  hotkeys = {
+    skipWord: 'Ctrl+Shift+Enter',
+    skipLine: 'Ctrl+Enter',
+    deleteWord: 'Ctrl+Backspace',
+    reset: 'Escape',
+  },
 }: TrainerProps) {
+
+  // Helper: check if keyboard event matches a hotkey string like "Ctrl+Shift+Enter"
+  const matchHotkey = useCallback((e: React.KeyboardEvent, combo: string): boolean => {
+    const parts = combo.split('+').map(s => s.trim().toLowerCase())
+    const key = e.key.toLowerCase()
+    const hasCtrl = e.ctrlKey || e.metaKey
+    const hasShift = e.shiftKey
+    const hasAlt = e.altKey
+    const keyPart = parts.find(p => !['ctrl', 'shift', 'alt', 'meta'].includes(p)) || ''
+    return (
+      parts.includes('ctrl') === hasCtrl &&
+      parts.includes('shift') === hasShift &&
+      parts.includes('alt') === hasAlt &&
+      keyPart === key
+    )
+  }, [])
+
   const {
     mode,
     selectedFile,
@@ -360,7 +389,7 @@ export function Trainer({
     }
 
     // Escape — сброс
-    if (e.key === 'Escape') {
+    if (matchHotkey(e, hotkeys.reset)) {
       e.preventDefault()
       resetTypingState()
       typingAreaRef.current?.focus({ preventScroll: true })
@@ -379,15 +408,15 @@ export function Trainer({
       return
     }
 
-    // Ctrl+Enter — пропуск строки
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
+    // Пропуск строки
+    if (matchHotkey(e, hotkeys.skipLine)) {
       e.preventDefault()
       handleSkipLine()
       return
     }
 
-    // Ctrl+Shift+Enter — пропуск слова
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.shiftKey) {
+    // Пропуск слова
+    if (matchHotkey(e, hotkeys.skipWord)) {
       e.preventDefault()
       handleSkipWord()
       return
@@ -717,13 +746,13 @@ export function Trainer({
         <span className="hint-sep">·</span>
         <span className="hint-key">⌫</span> удалить
         <span className="hint-sep">·</span>
-        <span className="hint-key">Ctrl+⌫</span> слово
+        <span className="hint-key">{hotkeys.deleteWord}</span> слово
         <span className="hint-sep">·</span>
-        <span className="hint-key">Ctrl+↵</span> пропуск строки
+        <span className="hint-key">{hotkeys.skipLine}</span> пропуск строки
         <span className="hint-sep">·</span>
-        <span className="hint-key" title="Пропуск слова">Ctrl+⇧+↵</span> пропуск слова
+        <span className="hint-key" title="Пропуск слова">{hotkeys.skipWord}</span> пропуск слова
         <span className="hint-sep">·</span>
-        <span className="hint-key">ESC</span> сброс
+        <span className="hint-key">{hotkeys.reset}</span> сброс
       </div>
     </div>
   )

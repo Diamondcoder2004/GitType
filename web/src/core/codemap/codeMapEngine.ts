@@ -251,3 +251,63 @@ export function renderStars(stars: StarRating): string {
   if (stars === 2) return '★★☆'
   return '★★★'
 }
+
+/**
+ * Graph node для визуализации импортов
+ */
+export interface GraphNode {
+  id: string
+  label: string
+  extension: string
+  x: number
+  y: number
+  isCurrent: boolean
+}
+
+export interface GraphEdge {
+  from: string
+  to: string
+}
+
+export interface ImportGraph {
+  nodes: GraphNode[]
+  edges: GraphEdge[]
+}
+
+/**
+ * Строит граф импортов для текущего файла
+ */
+export function buildImportGraph(
+  currentFile: string,
+  importPaths: string[],
+  allFiles: TreeNode[],
+): ImportGraph {
+  const nodes: GraphNode[] = []
+  const edges: GraphEdge[] = []
+
+  // Текущий файл — центр графа
+  const currentName = currentFile.split('/').pop() || currentFile
+  const currentExt = currentName.split('.').pop() || ''
+  nodes.push({ id: currentFile, label: currentName, extension: currentExt, x: 0, y: 0, isCurrent: true })
+
+  // Импорты как узлы вокруг текущего файла
+  const count = importPaths.length
+  const radius = 120
+  importPaths.forEach((imp, i) => {
+    const name = imp.split('/').pop() || imp
+    const ext = name.split('.').pop() || ''
+
+    // Try to find matching file in the tree
+    const match = allFiles.find(f => f.path.endsWith(imp) || f.path.endsWith(imp + '.ts') || f.path.endsWith(imp + '.js') || f.path.endsWith(imp + '.tsx') || f.path.endsWith(imp + '.jsx'))
+    const nodeId = match?.path || imp
+
+    const angle = (2 * Math.PI * i) / count - Math.PI / 2
+    const x = Math.cos(angle) * radius
+    const y = Math.sin(angle) * radius
+
+    nodes.push({ id: nodeId, label: name, extension: ext, x, y, isCurrent: false })
+    edges.push({ from: currentFile, to: nodeId })
+  })
+
+  return { nodes, edges }
+}

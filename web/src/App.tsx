@@ -15,7 +15,13 @@ import { History } from './features/history/History'
 import { CodeMap } from './features/codemap/CodeMap'
 import { addSession } from './core/history/historyEngine'
 import { addRecentRepo, getRecentRepos, removeRecentRepo, RecentRepo } from './core/repository/recentRepos'
+import { getFileIcon as getFileIconData, getFileIconColor } from './core/repository/fileIcons'
 import './App.css'
+
+// Возвращает текстовую метку иконки файла
+function getFileIconLabel(filename: string): string {
+  return getFileIconData(filename).icon
+}
 
 // Цвета тем для applyTheme (дубликат из Settings для доступа в App)
 const THEME_COLORS: Record<string, { bg: string; main: string; text: string }> = {
@@ -112,6 +118,12 @@ const DEFAULT_SETTINGS: AppSettings = {
   caretColor: 'theme',
   textStyle: 'normal',
   autoTheme: false,
+  hotkeys: {
+    skipWord: 'Ctrl+Shift+Enter',
+    skipLine: 'Ctrl+Enter',
+    deleteWord: 'Ctrl+Backspace',
+    reset: 'Escape',
+  },
 }
 
 /** Вспомогательная функция для получения плоского списка из дерева файлов */
@@ -788,6 +800,7 @@ function App() {
                 highlightCurrentLine={settings.highlightCurrentLine}
                 soundEnabled={settings.soundEnabled}
                 showMinimap={settings.showMinimap}
+                hotkeys={settings.hotkeys}
               />
             ) : (
               <div className="no-file-screen">
@@ -861,7 +874,7 @@ function App() {
             </>
           )}
 
-          {importPaths.length > 0 && mode === 'code-block' && (
+          {importPaths.length > 0 && (
             <>
               <div className="right-sidebar-header">
                 <span>🔗 Импорты ({importPaths.length})</span>
@@ -880,7 +893,16 @@ function App() {
                       onClick={() => matchedFile && handleFileSelect(matchedFile.path)}
                       title={matchedFile ? matchedFile.path : `Внешний модуль: ${imp}`}
                     >
-                      <span className="import-icon">{matchedFile ? '📄' : '📦'}</span>
+                      {matchedFile ? (
+                        <span
+                          className="file-icon-badge"
+                          style={{ color: getFileIconColor(matchedFile.name), borderColor: getFileIconColor(matchedFile.name) + '44' }}
+                        >
+                          {getFileIconLabel(matchedFile.name)}
+                        </span>
+                      ) : (
+                        <span className="import-icon-external">📦</span>
+                      )}
                       <span className="import-name">{imp.split('/').pop()}</span>
                       {matchedFile && progress.completedFiles.includes(matchedFile.path) && (
                         <span className="import-done">✅</span>
@@ -920,6 +942,9 @@ function App() {
         <CodeMap
           onClose={() => setCodemapOpen(false)}
           onFileSelect={handleFileSelect}
+          importPaths={importPaths}
+          currentFile={selectedFile || undefined}
+          fileTree={fileTree}
         />
       )}
 

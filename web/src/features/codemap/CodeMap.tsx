@@ -8,13 +8,72 @@ import {
   getFileIcon,
   StarRating,
   DirectoryProgress,
+  buildImportGraph,
+  ImportGraph,
 } from '../../core/codemap/codeMapEngine'
 import { getFileIconColor } from '../../core/repository/fileIcons'
+import { TreeNode } from '../../core/repository/treeBuilder'
 import './CodeMap.css'
+
+/** SVG graph для импортов */
+function ImportGraphView({
+  graph,
+  onClickFile,
+}: {
+  graph: ImportGraph
+  onClickFile?: (path: string) => void
+}) {
+  if (graph.nodes.length <= 1) {
+    return <div className="codemap-empty">Нет импортов для отображения</div>
+  }
+  const svgW = 400
+  const svgH = 320
+  const cx = svgW / 2
+  const cy = svgH / 2
+
+  return (
+    <svg viewBox={`0 0 ${svgW} ${svgH}`} className="import-graph-svg">
+      {graph.edges.map((e, i) => {
+        const fromNode = graph.nodes.find(n => n.id === e.from)
+        const toNode = graph.nodes.find(n => n.id === e.to)
+        if (!fromNode || !toNode) return null
+        return (
+          <line
+            key={i}
+            x1={cx + fromNode.x} y1={cy + fromNode.y}
+            x2={cx + toNode.x} y2={cy + toNode.y}
+            stroke="rgba(255,255,255,0.15)"
+            strokeWidth={1.5}
+          />
+        )
+      })}
+      {graph.nodes.map((node) => (
+        <g
+          key={node.id}
+          className={`graph-node ${node.isCurrent ? 'current' : ''}`}
+          transform={`translate(${cx + node.x}, ${cy + node.y})`}
+          onClick={() => onClickFile?.(node.id)}
+          style={{ cursor: onClickFile ? 'pointer' : 'default' }}
+        >
+          <circle r={node.isCurrent ? 28 : 22} className="graph-node-circle" />
+          <text y={-4} textAnchor="middle" className="graph-node-label">
+            {getFileIcon(node.extension)}
+          </text>
+          <text y={10} textAnchor="middle" className="graph-node-name">
+            {node.label.length > 14 ? node.label.slice(0, 12) + '…' : node.label}
+          </text>
+        </g>
+      ))}
+    </svg>
+  )
+}
 
 interface CodeMapProps {
   onClose: () => void
   onFileSelect: (filePath: string) => void
+  importPaths?: string[]
+  currentFile?: string
+  fileTree?: TreeNode[]
 }
 
 function Stars({ count }: { count: StarRating }) {
@@ -29,7 +88,7 @@ function Stars({ count }: { count: StarRating }) {
   )
 }
 
-export function CodeMap({ onClose, onFileSelect }: CodeMapProps) {
+export function CodeMap({ onClose, onFileSelect, importPaths, currentFile, fileTree: propFileTree }: CodeMapProps) {
   const { fileTree, selectedFile, progress } = useAppStore(
     useShallow((state) => ({
       fileTree: state.fileTree,
@@ -39,6 +98,8 @@ export function CodeMap({ onClose, onFileSelect }: CodeMapProps) {
   )
 
   const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set())
+
+  const [viewMode, setViewMode] = useState<'default' | 'graph'>('default')
   const [sessions] = useState(() => loadHistory())
 
   // Строим карту прогресса
@@ -116,6 +177,20 @@ export function CodeMap({ onClose, onFileSelect }: CodeMapProps) {
         {/* Header */}
         <div className="codemap-header">
           <h2>🗺️ CodeMap</h2>
+          <div className="codemap-tabs">
+            <button
+              className={`codemap-tab ${viewMode === 'default' ? 'active' : ''}`}
+              onClick={() => setViewMode('default')}
+            >
+              Дерево
+            </button>
+            <button
+              className={`codemap-tab ${viewMode === 'graph' ? 'active' : ''}`}
+              onClick={() => setViewMode('graph')}
+            >
+              Граф
+            </button>
+          </div>
           <button className="codemap-close" onClick={onClose}>✕</button>
         </div>
 
@@ -159,18 +234,29 @@ export function CodeMap({ onClose, onFileSelect }: CodeMapProps) {
           </div>
         </div>
 
-        {/* Directory Map */}
+        {/* Content: Directory Map or Import Graph */}
         <div className="codemap-content">
-          {directories.map((dir) => (
-            <DirectorySection
-              key={dir.path}
-              dir={dir}
-              isExpanded={expandedDirs.has(dir.path)}
-              selectedFile={selectedFile}
-              onToggle={() => toggleDir(dir.path)}
-              onFileClick={handleFileClick}
+          {viewMode === 'graph' ? (
+            <ImportGraphView
+              graph={buildImportGraph(
+                currentFile || selectedFile || '',
+                importPaths || [],
+                propFileTree || fileTree,
+              )}
+              onClickFile={handleFileClick}
             />
-          ))}
+          ) : (
+            directories.map((dir) => (
+              <DirectorySection
+                key={dir.path}
+                dir={dir}
+                isExpanded={expandedDirs.has(dir.path)}
+                selectedFile={selectedFile}
+                onToggle={() => toggleDir(dir.path)}
+                onFileClick={handleFileClick}
+              />
+            ))
+          )}
         </div>
 
         {/* Legend */}

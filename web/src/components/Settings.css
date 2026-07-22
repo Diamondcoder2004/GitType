@@ -520,3 +520,28 @@
     flex-direction: column;
   }
 }
+
+/* Hotkey input */
+.hotkey-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-color, #d1d0c5);
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.82rem;
+  width: 180px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.hotkey-input:focus {
+  outline: none;
+  border-color: var(--main-color, #e2b714);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.hotkey-input:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}

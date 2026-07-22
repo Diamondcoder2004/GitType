@@ -416,3 +416,73 @@
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   }
 }
+
+/* ===== Graph Tabs ===== */
+.codemap-tabs {
+  display: flex;
+  gap: 0;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.codemap-tab {
+  padding: 0.3rem 0.8rem;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.codemap-tab:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.codemap-tab.active {
+  background: var(--main-color, #e2b714);
+  color: #1a1b26;
+  font-weight: 600;
+}
+
+/* ===== Import Graph SVG ===== */
+.import-graph-svg {
+  width: 100%;
+  max-width: 500px;
+  height: auto;
+  margin: 1rem auto;
+  display: block;
+}
+
+.graph-node-circle {
+  fill: rgba(255, 255, 255, 0.06);
+  stroke: rgba(255, 255, 255, 0.15);
+  stroke-width: 1.5;
+  transition: all 0.15s;
+}
+
+.graph-node.current .graph-node-circle {
+  fill: var(--main-color, #e2b714)22;
+  stroke: var(--main-color, #e2b714);
+  stroke-width: 2;
+}
+
+.graph-node:hover .graph-node-circle {
+  fill: rgba(255, 255, 255, 0.1);
+  stroke: rgba(255, 255, 255, 0.3);
+}
+
+.graph-node-label {
+  fill: var(--main-color, #e2b714);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.graph-node-name {
+  fill: rgba(255, 255, 255, 0.7);
+  font-size: 9px;
+  font-family: var(--font-mono);
+}
