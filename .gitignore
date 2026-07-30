@@ -1,5 +1,3 @@
-```
-# Compiled and build artifacts
 *.pyc
 __pycache__/
 *.o
@@ -71,4 +69,4 @@ target/
 *.tar.bz2
 *.tar.xz
 *.tar.zst
-```
+thoughts
